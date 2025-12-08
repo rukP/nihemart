@@ -1,0 +1,11 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/nihemart/v2.nihemart.rw
+    - /usr/bin/npm install
+    - /usr/bin/npm run build
+    - /bin/cp -R .next $DEPLOYPATH
+    - /bin/cp -R public $DEPLOYPATH
+    - /bin/cp package.json $DEPLOYPATH
+    - /bin/cp next.config.js $DEPLOYPATH
+    - /bin/cp server.js $DEPLOYPATH # If you are using a custom server.js

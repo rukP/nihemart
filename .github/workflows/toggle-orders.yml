@@ -1,0 +1,30 @@
+name: Toggle Orders Schedule
+
+on:
+    schedule:
+        # Runs at 07:00 UTC (09:00 Kigali) and 19:30 UTC (21:30 Kigali) daily
+        - cron: "0 7 * * *"
+        - cron: "30 19 * * *"
+    workflow_dispatch: {}
+
+jobs:
+    toggle:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out
+              uses: actions/checkout@v4
+
+            - name: Use Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: "20"
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Toggle orders according to Kigali schedule
+              env:
+                  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+                  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+                  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+              run: node scripts/toggle-orders-schedule.js

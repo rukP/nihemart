@@ -1,0 +1,13 @@
+[
+{"type":"header","version":"5.2.1","comment":"Export to JSON plugin for PHPMyAdmin"},
+{"type":"database","name":"rwanda"},
+{"type":"table","name":"1_provinces","database":"rwanda","data":
+[
+{"prv_id":"1","prv_name":"Kigali"},
+{"prv_id":"2","prv_name":"South "},
+{"prv_id":"3","prv_name":"West  "},
+{"prv_id":"4","prv_name":"North "},
+{"prv_id":"5","prv_name":"East  "}
+]
+}
+]
