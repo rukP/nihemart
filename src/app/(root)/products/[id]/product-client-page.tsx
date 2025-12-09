@@ -269,14 +269,8 @@ export default function ProductClientPage({
    };
 
    const handleBuyNow = () => {
-      // Check if orders are disabled
-      if (ordersEnabled === false) {
-         toast.error(
-            t("checkout.ordersDisabled") ||
-               "Orders are currently disabled. Please try again later."
-         );
-         return;
-      }
+      // Allow buy-now even when schedule-based orders are disabled
+      // (Previously blocked users during non-working hours; we want to allow ordering)
 
       // Do not touch the main cart. Use buy-now temporary session and go to checkout.
       const hasVariants = variations.length > 0;
@@ -321,67 +315,71 @@ export default function ProductClientPage({
       return { average: total / reviews.length, distribution };
    }, [reviews]);
 
-  const getSocialMeta = (url?: string) => {
-    if (!url) return null;
-    const u = url.toLowerCase();
-    if (u.includes("instagram"))
+   const getSocialMeta = (url?: string) => {
+      if (!url) return null;
+      const u = url.toLowerCase();
+      if (u.includes("instagram"))
+         return {
+            name: "Instagram",
+            emoji: "📷",
+            color: "from-pink-500 to-pink-600",
+         };
+      if (u.includes("facebook"))
+         return {
+            name: "Facebook",
+            emoji: "👍",
+            color: "from-blue-600 to-blue-700",
+         };
+      if (u.includes("whatsapp") || u.includes("wa.me"))
+         return {
+            name: "WhatsApp",
+            emoji: "💬",
+            color: "from-green-500 to-green-600",
+         };
+      if (u.includes("youtu"))
+         return {
+            name: "YouTube",
+            emoji: "🎥",
+            color: "from-red-600 to-red-700",
+         };
+      if (u.includes("tiktok"))
+         return {
+            name: "TikTok",
+            emoji: "🎵",
+            color: "from-gray-900 to-gray-800",
+         };
+      if (u.includes("twitter") || u.includes("x.com"))
+         return {
+            name: "Twitter/X",
+            emoji: "𝕏",
+            color: "from-sky-500 to-sky-600",
+         };
+      if (u.includes("linkedin"))
+         return {
+            name: "LinkedIn",
+            emoji: "💼",
+            color: "from-blue-700 to-blue-800",
+         };
       return {
-        name: "Instagram",
-        emoji: "📷",
-        color: "from-pink-500 to-pink-600",
+         name: "Website",
+         emoji: "🔗",
+         color: "from-slate-700 to-slate-800",
       };
-    if (u.includes("facebook"))
-      return {
-        name: "Facebook",
-        emoji: "👍",
-        color: "from-blue-600 to-blue-700",
-      };
-    if (u.includes("whatsapp") || u.includes("wa.me"))
-      return {
-        name: "WhatsApp",
-        emoji: "💬",
-        color: "from-green-500 to-green-600",
-      };
-    if (u.includes("youtu"))
-      return { name: "YouTube", emoji: "🎥", color: "from-red-600 to-red-700" };
-    if (u.includes("tiktok"))
-      return {
-        name: "TikTok",
-        emoji: "🎵",
-        color: "from-gray-900 to-gray-800",
-      };
-    if (u.includes("twitter") || u.includes("x.com"))
-      return {
-        name: "Twitter/X",
-        emoji: "𝕏",
-        color: "from-sky-500 to-sky-600",
-      };
-    if (u.includes("linkedin"))
-      return {
-        name: "LinkedIn",
-        emoji: "💼",
-        color: "from-blue-700 to-blue-800",
-      };
-    return {
-      name: "Website",
-      emoji: "🔗",
-      color: "from-slate-700 to-slate-800",
-    };
-  };
+   };
 
-  // Calculate price range from variations
-  const priceRange = useMemo(() => {
-    if (variations.length === 0) return null;
-    const prices = variations
-      .map((v) => v.price)
-      .filter((p) => p != null && p !== undefined)
-      .sort((a, b) => (a ?? 0) - (b ?? 0));
-    if (prices.length === 0) return null;
-    return {
-      min: prices[0],
-      max: prices[prices.length - 1],
-    };
-  }, [variations]);
+   // Calculate price range from variations
+   const priceRange = useMemo(() => {
+      if (variations.length === 0) return null;
+      const prices = variations
+         .map((v) => v.price)
+         .filter((p) => p != null && p !== undefined)
+         .sort((a, b) => (a ?? 0) - (b ?? 0));
+      if (prices.length === 0) return null;
+      return {
+         min: prices[0],
+         max: prices[prices.length - 1],
+      };
+   }, [variations]);
 
    const currentPrice = singleSelectedVariation?.price ?? product.price;
    const comparePrice = product.compare_at_price;
@@ -465,70 +463,70 @@ export default function ProductClientPage({
                   </div>
                </div>
 
-          <div className="space-y-6">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                {/* <div className="flex items-baseline gap-2"><span className="text-3xl font-bold text-orange-600">{currentPrice.toFixed(2)} frw</span>{comparePrice && <span className="text-lg text-gray-500 line-through">€{comparePrice.toFixed(2)}</span>}</div> */}
-                <div className="flex items-baseline gap-2 md:hidden">
-                  {!singleSelectedVariation && priceRange ? (
-                    <>
-                      <span className="text-3xl font-bold text-orange-600">
-                        {priceRange.min === priceRange.max
-                          ? `${priceRange.min.toLocaleString()} frw`
-                          : `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} frw`}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-3xl font-bold text-orange-600">
-                      {currentPrice.toLocaleString()} frw
-                    </span>
-                  )}
-                  {comparePrice && (
-                    <span className="text-lg text-gray-500 line-through">
-                      {comparePrice} frw
-                    </span>
-                  )}
-                </div>
-                <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-gray-900">
-                  {product.name}
-                </h1>
-                <p
-                  className="text-gray-600 mt-1 text-sm md:text-md"
-                  dangerouslySetInnerHTML={{
-                    __html: product?.short_description || "",
-                  }}
-                />
-              </div>
-              <WishlistButton
-                productId={product.id}
-                size="lg"
-                variant="outline"
-                showText={false}
-                className="ml-4"
-              />
-            </div>
-            <div className="space-y-2">
-              {/* <div className="flex items-baseline gap-2"><span className="text-3xl font-bold text-orange-600">{currentPrice.toFixed(2)} frw</span>{comparePrice && <span className="text-lg text-gray-500 line-through">€{comparePrice.toFixed(2)}</span>}</div> */}
-              <div className="md:flex items-baseline gap-2 hidden">
-                {!singleSelectedVariation && priceRange ? (
-                  <>
-                    <span className="text-3xl font-bold text-orange-600">
-                      {priceRange.min === priceRange.max
-                        ? `${priceRange.min.toLocaleString()} frw`
-                        : `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} frw`}
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-3xl font-bold text-orange-600">
-                    {currentPrice.toLocaleString()} frw
-                  </span>
-                )}
-                {comparePrice && (
-                  <span className="text-lg text-gray-500 line-through">
-                    {comparePrice} frw
-                  </span>
-                )}
-              </div>
+               <div className="space-y-6">
+                  <div className="flex items-start justify-between">
+                     <div className="flex-1">
+                        {/* <div className="flex items-baseline gap-2"><span className="text-3xl font-bold text-orange-600">{currentPrice.toFixed(2)} frw</span>{comparePrice && <span className="text-lg text-gray-500 line-through">€{comparePrice.toFixed(2)}</span>}</div> */}
+                        <div className="flex items-baseline gap-2 md:hidden">
+                           {!singleSelectedVariation && priceRange ? (
+                              <>
+                                 <span className="text-3xl font-bold text-orange-600">
+                                    {priceRange.min === priceRange.max
+                                       ? `${priceRange.min.toLocaleString()} frw`
+                                       : `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} frw`}
+                                 </span>
+                              </>
+                           ) : (
+                              <span className="text-3xl font-bold text-orange-600">
+                                 {currentPrice.toLocaleString()} frw
+                              </span>
+                           )}
+                           {comparePrice && (
+                              <span className="text-lg text-gray-500 line-through">
+                                 {comparePrice} frw
+                              </span>
+                           )}
+                        </div>
+                        <h1 className="text-lg md:text-2xl lg:text-3xl font-bold text-gray-900">
+                           {product.name}
+                        </h1>
+                        <p
+                           className="text-gray-600 mt-1 text-sm md:text-md"
+                           dangerouslySetInnerHTML={{
+                              __html: product?.short_description || "",
+                           }}
+                        />
+                     </div>
+                     <WishlistButton
+                        productId={product.id}
+                        size="lg"
+                        variant="outline"
+                        showText={false}
+                        className="ml-4"
+                     />
+                  </div>
+                  <div className="space-y-2">
+                     {/* <div className="flex items-baseline gap-2"><span className="text-3xl font-bold text-orange-600">{currentPrice.toFixed(2)} frw</span>{comparePrice && <span className="text-lg text-gray-500 line-through">€{comparePrice.toFixed(2)}</span>}</div> */}
+                     <div className="md:flex items-baseline gap-2 hidden">
+                        {!singleSelectedVariation && priceRange ? (
+                           <>
+                              <span className="text-3xl font-bold text-orange-600">
+                                 {priceRange.min === priceRange.max
+                                    ? `${priceRange.min.toLocaleString()} frw`
+                                    : `${priceRange.min.toLocaleString()} - ${priceRange.max.toLocaleString()} frw`}
+                              </span>
+                           </>
+                        ) : (
+                           <span className="text-3xl font-bold text-orange-600">
+                              {currentPrice.toLocaleString()} frw
+                           </span>
+                        )}
+                        {comparePrice && (
+                           <span className="text-lg text-gray-500 line-through">
+                              {comparePrice} frw
+                           </span>
+                        )}
+                     </div>
 
                      <div className="flex items-center gap-2">
                         <div className="flex items-center">
@@ -630,281 +628,320 @@ export default function ProductClientPage({
                            <ShoppingCart className="h-5 w-5 text-orange-500" />
                         </Button>
 
-                <Button
-                  onClick={() => handleBuyNow()}
-                  className={cn(
-                    "flex-1 h-12 text-base font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white",
-                    (variations.length > 0 && !singleSelectedVariation) ||
-                      !inStock
-                      ? "opacity-60 cursor-not-allowed"
-                      : "hover:shadow-lg"
-                  )}
-                >
-                  {variations.length > 0 && !singleSelectedVariation
-                    ? "Select Options"
-                    : !inStock
-                      ? t("products.outOfStock")
-                      : t("products.buyNow")}
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-4 pt-6 border-t">
-              {product.social_media_link &&
-                (() => {
-                  const meta = getSocialMeta(product.social_media_link);
-                  return (
-                    <div className="w-full">
-                      <h3 className="font-bold text-lg text-gray-900 mb-3">
-                        {t("products.more")}
-                      </h3>
-                      <a
-                        href={product.social_media_link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`group relative block w-full overflow-hidden rounded-xl bg-gradient-to-r ${meta?.color} p-1 shadow-lg transition-all hover:shadow-xl`}
-                      >
-                        <div className="flex items-center gap-4 rounded-[10px] bg-white px-5 py-4 transition group-hover:bg-gray-50 sm:px-6 sm:py-5">
-                          <span className="flex-shrink-0 text-4xl sm:text-5xl">
-                            {meta?.emoji}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-gray-900">
-                              {t("products.visit")} {meta?.name}
-                            </div>
-                            <div className="text-xs text-gray-600 truncate sm:text-sm">
-                              {product.social_media_link.replace(
-                                /^https?:\/\/(?:www\.)?/,
-                                ""
-                              )}
-                            </div>
-                          </div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 flex-shrink-0 text-gray-400 transition group-hover:translate-x-1 group-hover:text-gray-600 sm:h-6 sm:w-6"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                            />
-                          </svg>
-                        </div>
-                      </a>
-                    </div>
-                  );
-                })()}
-              <div className="flex items-center gap-3">
-                <Truck className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-600">We Deliver</p>
-                  <p className="text-sm text-gray-600">
-                    Delivery fee is calculated at checkout based on your
-                    location.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <RotateCcw className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="font-medium text-orange-600">Return Delivery</p>
-                  <p className="text-sm text-gray-600">
-                    If you are not satisfied with your purchase, you can return
-                    it within 24 hours.
-                    <Link
-                      href="/returns"
-                      className="text-orange-600 underline decoration-dotted cursor-pointer"
-                    >
-                      Details
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-16">
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
-              <TabsTrigger value="description">Description</TabsTrigger>
-              <TabsTrigger value="reviews">
-                Reviews ({reviews?.length || 0})
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="description" className="mt-8">
-              <Card>
-                <CardContent
-                  className="p-6 prose max-w-none prose-p:my-2 prose-h3:mb-2 prose-h3:mt-4"
-                  dangerouslySetInnerHTML={{
-                    __html: product.description || "No description available.",
-                  }}
-                />
-              </Card>
-              {product.social_media_link &&
-                (() => {
-                  const meta = getSocialMeta(product.social_media_link);
-                  return (
-                    <Card className="mt-6 border-0 shadow-md overflow-hidden">
-                      <div className={`h-2 bg-gradient-to-r ${meta?.color}`} />
-                      <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center gap-2 text-base">
-                          <span className="text-3xl">{meta?.emoji}</span>
-                          {meta?.name}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pt-2">
-                        <a
-                          href={product.social_media_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`group flex w-full items-center justify-between gap-3 rounded-lg bg-gradient-to-r ${meta?.color} px-4 py-3 font-medium text-white shadow-sm transition hover:shadow-md`}
+                        <Button
+                           onClick={() => handleBuyNow()}
+                           className={cn(
+                              "flex-1 h-12 text-base font-medium bg-gradient-to-r from-orange-500 to-orange-600 text-white",
+                              (variations.length > 0 &&
+                                 !singleSelectedVariation) ||
+                                 !inStock
+                                 ? "opacity-60 cursor-not-allowed"
+                                 : "hover:shadow-lg"
+                           )}
                         >
-                          <span className="truncate text-sm sm:text-base">
-                            {product.social_media_link.replace(
-                              /^https?:\/\/(?:www\.)?/,
-                              ""
-                            )}
-                          </span>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 flex-shrink-0 transition group-hover:translate-x-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                            />
-                          </svg>
-                        </a>
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-            </TabsContent>
-            <TabsContent value="reviews" className="mt-8 space-y-8">
-              {reviews.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Customers Feedback</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="text-center">
-                        <div className="text-5xl font-bold text-orange-600 mb-2">
-                          {reviewStats.average.toFixed(1)}
+                           {variations.length > 0 && !singleSelectedVariation
+                              ? "Select Options"
+                              : !inStock
+                              ? t("products.outOfStock")
+                              : t("products.buyNow")}
+                        </Button>
+                     </div>
+                  </div>
+                  <div className="space-y-4 pt-6 border-t">
+                     {product.social_media_link &&
+                        (() => {
+                           const meta = getSocialMeta(
+                              product.social_media_link
+                           );
+                           return (
+                              <div className="w-full">
+                                 <h3 className="font-bold text-lg text-gray-900 mb-3">
+                                    {t("products.more")}
+                                 </h3>
+                                 <a
+                                    href={product.social_media_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`group relative block w-full overflow-hidden rounded-xl bg-gradient-to-r ${meta?.color} p-1 shadow-lg transition-all hover:shadow-xl`}
+                                 >
+                                    <div className="flex items-center gap-4 rounded-[10px] bg-white px-5 py-4 transition group-hover:bg-gray-50 sm:px-6 sm:py-5">
+                                       <span className="flex-shrink-0 text-4xl sm:text-5xl">
+                                          {meta?.emoji}
+                                       </span>
+                                       <div className="min-w-0 flex-1">
+                                          <div className="text-sm font-semibold text-gray-900">
+                                             {t("products.visit")} {meta?.name}
+                                          </div>
+                                          <div className="text-xs text-gray-600 truncate sm:text-sm">
+                                             {product.social_media_link.replace(
+                                                /^https?:\/\/(?:www\.)?/,
+                                                ""
+                                             )}
+                                          </div>
+                                       </div>
+                                       <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-5 w-5 flex-shrink-0 text-gray-400 transition group-hover:translate-x-1 group-hover:text-gray-600 sm:h-6 sm:w-6"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                       >
+                                          <path
+                                             strokeLinecap="round"
+                                             strokeLinejoin="round"
+                                             strokeWidth={2}
+                                             d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                                          />
+                                       </svg>
+                                    </div>
+                                 </a>
+                              </div>
+                           );
+                        })()}
+                     <div className="flex items-center gap-3">
+                        <Truck className="h-5 w-5 text-green-600" />
+                        <div>
+                           <p className="font-medium text-green-600">
+                              We Deliver
+                           </p>
+                           <p className="text-sm text-gray-600">
+                              Delivery fee is calculated at checkout based on
+                              your location.
+                           </p>
                         </div>
-                        <div className="flex justify-center mb-2">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-5 w-5 ${
-                                i < Math.round(reviewStats.average)
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
+                     </div>
+                     <div className="flex items-center gap-3">
+                        <RotateCcw className="h-5 w-5 text-orange-600" />
+                        <div>
+                           <p className="font-medium text-orange-600">
+                              Return Delivery
+                           </p>
+                           <p className="text-sm text-gray-600">
+                              If you are not satisfied with your purchase, you
+                              can return it within 24 hours.
+                              <Link
+                                 href="/returns"
+                                 className="text-orange-600 underline decoration-dotted cursor-pointer"
+                              >
+                                 Details
+                              </Link>
+                           </p>
                         </div>
-                        <p className="text-gray-600">Product Rating</p>
-                      </div>
-                      <div className="space-y-2">
-                        {reviewStats.distribution.map((item) => (
-                          <div
-                            key={item.stars}
-                            className="flex items-center gap-2"
-                          >
-                            <div className="flex">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-3 w-3 ${
-                                    i < item.stars
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
-                            </div>
-                            <Progress
-                              value={item.percentage}
-                              className="flex-1 h-2"
-                            />
-                            <span className="text-sm text-gray-600 w-8">
-                              {item.percentage.toFixed(0)}%
-                            </span>
-                          </div>
+                     </div>
+                  </div>
+               </div>
+            </div>
+
+            <div className="mt-16">
+               <Tabs
+                  defaultValue="description"
+                  className="w-full"
+               >
+                  <TabsList className="grid w-full grid-cols-2 max-w-md">
+                     <TabsTrigger value="description">Description</TabsTrigger>
+                     <TabsTrigger value="reviews">
+                        Reviews ({reviews?.length || 0})
+                     </TabsTrigger>
+                  </TabsList>
+                  <TabsContent
+                     value="description"
+                     className="mt-8"
+                  >
+                     <Card>
+                        <CardContent
+                           className="p-6 prose max-w-none prose-p:my-2 prose-h3:mb-2 prose-h3:mt-4"
+                           dangerouslySetInnerHTML={{
+                              __html:
+                                 product.description ||
+                                 "No description available.",
+                           }}
+                        />
+                     </Card>
+                     {product.social_media_link &&
+                        (() => {
+                           const meta = getSocialMeta(
+                              product.social_media_link
+                           );
+                           return (
+                              <Card className="mt-6 border-0 shadow-md overflow-hidden">
+                                 <div
+                                    className={`h-2 bg-gradient-to-r ${meta?.color}`}
+                                 />
+                                 <CardHeader className="pb-2">
+                                    <CardTitle className="flex items-center gap-2 text-base">
+                                       <span className="text-3xl">
+                                          {meta?.emoji}
+                                       </span>
+                                       {meta?.name}
+                                    </CardTitle>
+                                 </CardHeader>
+                                 <CardContent className="pt-2">
+                                    <a
+                                       href={product.social_media_link}
+                                       target="_blank"
+                                       rel="noopener noreferrer"
+                                       className={`group flex w-full items-center justify-between gap-3 rounded-lg bg-gradient-to-r ${meta?.color} px-4 py-3 font-medium text-white shadow-sm transition hover:shadow-md`}
+                                    >
+                                       <span className="truncate text-sm sm:text-base">
+                                          {product.social_media_link.replace(
+                                             /^https?:\/\/(?:www\.)?/,
+                                             ""
+                                          )}
+                                       </span>
+                                       <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          className="h-4 w-4 flex-shrink-0 transition group-hover:translate-x-1"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          stroke="currentColor"
+                                       >
+                                          <path
+                                             strokeLinecap="round"
+                                             strokeLinejoin="round"
+                                             strokeWidth={2}
+                                             d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+                                          />
+                                       </svg>
+                                    </a>
+                                 </CardContent>
+                              </Card>
+                           );
+                        })()}
+                  </TabsContent>
+                  <TabsContent
+                     value="reviews"
+                     className="mt-8 space-y-8"
+                  >
+                     {reviews.length > 0 && (
+                        <Card>
+                           <CardHeader>
+                              <CardTitle>Customers Feedback</CardTitle>
+                           </CardHeader>
+                           <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                 <div className="text-center">
+                                    <div className="text-5xl font-bold text-orange-600 mb-2">
+                                       {reviewStats.average.toFixed(1)}
+                                    </div>
+                                    <div className="flex justify-center mb-2">
+                                       {[...Array(5)].map((_, i) => (
+                                          <Star
+                                             key={i}
+                                             className={`h-5 w-5 ${
+                                                i <
+                                                Math.round(reviewStats.average)
+                                                   ? "fill-yellow-400 text-yellow-400"
+                                                   : "text-gray-300"
+                                             }`}
+                                          />
+                                       ))}
+                                    </div>
+                                    <p className="text-gray-600">
+                                       Product Rating
+                                    </p>
+                                 </div>
+                                 <div className="space-y-2">
+                                    {reviewStats.distribution.map((item) => (
+                                       <div
+                                          key={item.stars}
+                                          className="flex items-center gap-2"
+                                       >
+                                          <div className="flex">
+                                             {[...Array(5)].map((_, i) => (
+                                                <Star
+                                                   key={i}
+                                                   className={`h-3 w-3 ${
+                                                      i < item.stars
+                                                         ? "fill-yellow-400 text-yellow-400"
+                                                         : "text-gray-300"
+                                                   }`}
+                                                />
+                                             ))}
+                                          </div>
+                                          <Progress
+                                             value={item.percentage}
+                                             className="flex-1 h-2"
+                                          />
+                                          <span className="text-sm text-gray-600 w-8">
+                                             {item.percentage.toFixed(0)}%
+                                          </span>
+                                       </div>
+                                    ))}
+                                 </div>
+                              </div>
+                           </CardContent>
+                        </Card>
+                     )}
+                     <div className="space-y-6">
+                        <h3 className="text-xl font-semibold">
+                           Customer Reviews
+                        </h3>
+                        {reviews?.map((review) => (
+                           <Card key={review.id}>
+                              <CardContent className="p-6">
+                                 <div className="flex items-start gap-4">
+                                    <Avatar>
+                                       <AvatarFallback>
+                                          {review.author?.full_name?.charAt(
+                                             0
+                                          ) || "U"}
+                                       </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                       <div className="flex items-center justify-between mb-2">
+                                          <h4 className="font-semibold">
+                                             {review.author?.full_name ||
+                                                "Anonymous"}
+                                          </h4>
+                                          <span className="text-sm text-gray-500">
+                                             {new Date(
+                                                review.created_at
+                                             ).toLocaleDateString()}
+                                          </span>
+                                       </div>
+                                       <div className="flex items-center gap-2 mb-2">
+                                          {[...Array(5)].map((_, i) => (
+                                             <Star
+                                                key={i}
+                                                className={`h-4 w-4 ${
+                                                   i < review.rating
+                                                      ? "fill-yellow-400 text-yellow-400"
+                                                      : "text-gray-300"
+                                                }`}
+                                             />
+                                          ))}
+                                       </div>
+                                       {review.image_url && (
+                                          <div className="mb-4">
+                                             <Image
+                                                src={optimizeImageUrl(
+                                                   review.image_url ||
+                                                      "/placeholder.svg",
+                                                   {
+                                                      width: 600,
+                                                      height: 400,
+                                                      quality: 75,
+                                                   }
+                                                )}
+                                                alt="Review image"
+                                                width={300}
+                                                height={200}
+                                                className="rounded-lg object-cover max-w-full h-auto"
+                                             />
+                                          </div>
+                                       )}
+                                       <h5 className="font-medium mb-2">
+                                          {review.title}
+                                       </h5>
+                                       <p className="text-gray-600">
+                                          {review.content}
+                                       </p>
+                                    </div>
+                                 </div>
+                              </CardContent>
+                           </Card>
                         ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Customer Reviews</h3>
-                {reviews?.map((review) => (
-                  <Card key={review.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <Avatar>
-                          <AvatarFallback>
-                            {review.author?.full_name?.charAt(0) || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold">
-                              {review.author?.full_name || "Anonymous"}
-                            </h4>
-                            <span className="text-sm text-gray-500">
-                              {new Date(review.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mb-2">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < review.rating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          {review.image_url && (
-                            <div className="mb-4">
-                              <Image
-                                src={optimizeImageUrl(
-                                  review.image_url || "/placeholder.svg",
-                                  {
-                                    width: 600,
-                                    height: 400,
-                                    quality: 75,
-                                  }
-                                )}
-                                alt="Review image"
-                                width={300}
-                                height={200}
-                                className="rounded-lg object-cover max-w-full h-auto"
-                              />
-                            </div>
-                          )}
-                          <h5 className="font-medium mb-2">{review.title}</h5>
-                          <p className="text-gray-600">{review.content}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                     </div>
 
                      {user ? (
                         <ReviewForm
@@ -932,53 +969,53 @@ export default function ProductClientPage({
                </Tabs>
             </div>
 
-        {similarProducts && similarProducts.length > 0 && (
-          <div className="mt-16">
-            <h2 className="text-2xl font-bold mb-8">
-              Similar Items You Might Also Like
-            </h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {similarProducts.map((p) => (
-                <Card
-                  key={p.id}
-                  className="group cursor-pointer"
-                  onClick={() => router.push(`/products/${p.id}`)}
-                >
-                  <CardContent className="p-4">
-                    <div className="relative aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
-                      <Image
-                        src={optimizeImageUrl(p.main_image_url, {
-                          width: 200,
-                          height: 200,
-                          quality: 75,
-                        })}
-                        alt={p.name}
-                        fill
-                        className="object-cover transition-transform"
-                        sizes="(max-width: 1024px) 50vw, 25vw"
-                        quality={75}
-                      />
-                      <div className="absolute top-2 right-2">
-                        <WishlistButton
-                          productId={p.id}
-                          size="sm"
-                          variant="ghost"
-                          className="bg-white/80 backdrop-blur-sm shadow-sm"
-                        />
-                      </div>
-                    </div>
-                    <p className="font-bold text-orange-600">
-                      FRW{" "}
-                      {p.minPrice && p.maxPrice
-                        ? p.minPrice === p.maxPrice
-                          ? p.minPrice.toLocaleString()
-                          : `${p.minPrice.toLocaleString()} - ${p.maxPrice.toLocaleString()}`
-                        : p.price.toLocaleString()}
-                    </p>
-                    <h3 className="font-medium text-sm mb-1 truncate">
-                      {p.name}
-                    </h3>
-                    {/* <div className="flex items-center gap-1 mb-2">
+            {similarProducts && similarProducts.length > 0 && (
+               <div className="mt-16">
+                  <h2 className="text-2xl font-bold mb-8">
+                     Similar Items You Might Also Like
+                  </h2>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                     {similarProducts.map((p) => (
+                        <Card
+                           key={p.id}
+                           className="group cursor-pointer"
+                           onClick={() => router.push(`/products/${p.id}`)}
+                        >
+                           <CardContent className="p-4">
+                              <div className="relative aspect-square mb-3 bg-gray-100 rounded-lg overflow-hidden">
+                                 <Image
+                                    src={optimizeImageUrl(p.main_image_url, {
+                                       width: 200,
+                                       height: 200,
+                                       quality: 75,
+                                    })}
+                                    alt={p.name}
+                                    fill
+                                    className="object-cover transition-transform"
+                                    sizes="(max-width: 1024px) 50vw, 25vw"
+                                    quality={75}
+                                 />
+                                 <div className="absolute top-2 right-2">
+                                    <WishlistButton
+                                       productId={p.id}
+                                       size="sm"
+                                       variant="ghost"
+                                       className="bg-white/80 backdrop-blur-sm shadow-sm"
+                                    />
+                                 </div>
+                              </div>
+                              <p className="font-bold text-orange-600">
+                                 FRW{" "}
+                                 {p.minPrice && p.maxPrice
+                                    ? p.minPrice === p.maxPrice
+                                       ? p.minPrice.toLocaleString()
+                                       : `${p.minPrice.toLocaleString()} - ${p.maxPrice.toLocaleString()}`
+                                    : p.price.toLocaleString()}
+                              </p>
+                              <h3 className="font-medium text-sm mb-1 truncate">
+                                 {p.name}
+                              </h3>
+                              {/* <div className="flex items-center gap-1 mb-2">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}

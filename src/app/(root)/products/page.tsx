@@ -219,14 +219,8 @@ function ProductListingComponent() {
    const handleBuyNow = (e: React.MouseEvent, product: StoreProduct) => {
       e.stopPropagation();
 
-      // Check if orders are disabled
-      if (ordersEnabled === false) {
-         toast.error(
-            t("checkout.ordersDisabled") ||
-               "Orders are currently disabled. Please try again later."
-         );
-         return;
-      }
+      // Allow buy-now even when schedule-based orders are disabled
+      // (Previously blocked users during non-working hours; we want to allow ordering)
 
       const stock = (product as any).stock ?? product.stock ?? undefined;
       if (typeof stock === "number" && stock <= 0) {
@@ -531,152 +525,171 @@ function ProductListingComponent() {
                      </div>
                   </div>
 
-            {!loading && products.length === 0 ? (
-              <div className="flex flex-col items-center justify-center text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
-                <PackageSearch className="w-20 h-20 text-gray-300 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-700">
-                  No Products Found
-                </h3>
-                <p className="text-gray-500 mt-2">
-                  Try adjusting your filters or search term.
-                </p>
-                <Button
-                  onClick={handleClearFilters}
-                  className="mt-6 bg-orange-500 hover:bg-orange-600"
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-5 mb-8">
-                {loading
-                  ? Array.from({ length: PAGE_LIMIT }).map((_, i) => (
-                      <Card
-                        key={i}
-                        className="animate-pulse bg-gray-200 h-80 border-0"
-                      >
-                        <CardContent className="p-3">
-                          <div className="aspect-square bg-gray-300 rounded-lg mb-3"></div>
-                          <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                          <div className="h-3 bg-gray-300 rounded w-3/4"></div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  : products.map((product) => (
-                      <Card
-                        key={product.id}
-                        onClick={() => router.push(`/products/${product?.id}`)}
-                        className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border-0 shadow-md cursor-pointer overflow-hidden"
-                      >
-                        <CardContent className="md:p-5 p-2">
-                          <div className="relative mb-4">
-                            <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl p-4 aspect-square">
-                              <Image
-                                src={
-                                  product?.main_image_url || "/placeholder.svg"
-                                }
-                                alt={product?.name}
-                                fill
-                                className="object-cover rounded-lg"
-                              //   priority
-                              //   loading="eager"
-                              />
-                            </div>
-                            <div className="absolute z-20 left-3 top-3">
-                              {((product as any).stock ??
-                                product?.stock ??
-                                0) <= 0 ? (
-                                <span className="inline-block bg-red-600 text-white text-xs font-bold rounded-lg px-3 py-1 shadow-md">
-                                  Out of Stock
-                                </span>
-                              ) : (
-                                <span className="hidden md:inline-block bg-orange-500 text-white text-xs font-bold rounded-lg px-3 py-1 shadow-md">
-                                  RWF{" "}
-                                  {(product as any).minPrice &&
-                                  (product as any).maxPrice
-                                    ? (product as any).minPrice ===
-                                      (product as any).maxPrice
-                                      ? (
-                                          product as any
-                                        ).minPrice.toLocaleString()
-                                      : `${(product as any).minPrice.toLocaleString()}-${(product as any).maxPrice.toLocaleString()}`
-                                    : product?.price.toLocaleString()}
-                                </span>
-                              )}
-                            </div>
-                            {/* Wishlist Button (disabled for OOS) */}
-                            <div className="absolute top-2 right-2">
-                              {((product as any).stock ?? product?.stock) <=
-                              0 ? (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toast.error(
-                                      t("products.outOfStock") ||
-                                        "This product is out of stock."
-                                    );
-                                  }}
-                                  className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 opacity-60 cursor-not-allowed"
-                                  aria-disabled
+                  {!loading && products.length === 0 ? (
+                     <div className="flex flex-col items-center justify-center text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
+                        <PackageSearch className="w-20 h-20 text-gray-300 mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-700">
+                           No Products Found
+                        </h3>
+                        <p className="text-gray-500 mt-2">
+                           Try adjusting your filters or search term.
+                        </p>
+                        <Button
+                           onClick={handleClearFilters}
+                           className="mt-6 bg-orange-500 hover:bg-orange-600"
+                        >
+                           Clear Filters
+                        </Button>
+                     </div>
+                  ) : (
+                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-5 mb-8">
+                        {loading
+                           ? Array.from({ length: PAGE_LIMIT }).map((_, i) => (
+                                <Card
+                                   key={i}
+                                   className="animate-pulse bg-gray-200 h-80 border-0"
                                 >
-                                  <Heart className="h-4 w-4 text-gray-300" />
-                                </button>
-                              ) : (
-                                <WishlistButton
-                                  productId={product.id}
-                                  size="sm"
-                                  variant="ghost"
-                                  className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm rounded-full p-1.5"
-                                />
-                              )}
-                            </div>
-                          </div>
+                                   <CardContent className="p-3">
+                                      <div className="aspect-square bg-gray-300 rounded-lg mb-3"></div>
+                                      <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                                      <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+                                   </CardContent>
+                                </Card>
+                             ))
+                           : products.map((product) => (
+                                <Card
+                                   key={product.id}
+                                   onClick={() =>
+                                      router.push(`/products/${product?.id}`)
+                                   }
+                                   className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border-0 shadow-md cursor-pointer overflow-hidden"
+                                >
+                                   <CardContent className="md:p-5 p-2">
+                                      <div className="relative mb-4">
+                                         <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl p-4 aspect-square">
+                                            <Image
+                                               src={
+                                                  product?.main_image_url ||
+                                                  "/placeholder.svg"
+                                               }
+                                               alt={product?.name}
+                                               fill
+                                               className="object-cover rounded-lg"
+                                               //   priority
+                                               //   loading="eager"
+                                            />
+                                         </div>
+                                         <div className="absolute z-20 left-3 top-3">
+                                            {((product as any).stock ??
+                                               product?.stock ??
+                                               0) <= 0 ? (
+                                               <span className="inline-block bg-red-600 text-white text-xs font-bold rounded-lg px-3 py-1 shadow-md">
+                                                  Out of Stock
+                                               </span>
+                                            ) : (
+                                               <span className="hidden md:inline-block bg-orange-500 text-white text-xs font-bold rounded-lg px-3 py-1 shadow-md">
+                                                  RWF{" "}
+                                                  {(product as any).minPrice &&
+                                                  (product as any).maxPrice
+                                                     ? (product as any)
+                                                          .minPrice ===
+                                                       (product as any).maxPrice
+                                                        ? (
+                                                             product as any
+                                                          ).minPrice.toLocaleString()
+                                                        : `${(
+                                                             product as any
+                                                          ).minPrice.toLocaleString()}-${(
+                                                             product as any
+                                                          ).maxPrice.toLocaleString()}`
+                                                     : product?.price.toLocaleString()}
+                                               </span>
+                                            )}
+                                         </div>
+                                         {/* Wishlist Button (disabled for OOS) */}
+                                         <div className="absolute top-2 right-2">
+                                            {((product as any).stock ??
+                                               product?.stock) <= 0 ? (
+                                               <button
+                                                  onClick={(e) => {
+                                                     e.stopPropagation();
+                                                     toast.error(
+                                                        t(
+                                                           "products.outOfStock"
+                                                        ) ||
+                                                           "This product is out of stock."
+                                                     );
+                                                  }}
+                                                  className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 opacity-60 cursor-not-allowed"
+                                                  aria-disabled
+                                               >
+                                                  <Heart className="h-4 w-4 text-gray-300" />
+                                               </button>
+                                            ) : (
+                                               <WishlistButton
+                                                  productId={product.id}
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  className="bg-white/90 backdrop-blur-sm hover:bg-white shadow-sm rounded-full p-1.5"
+                                               />
+                                            )}
+                                         </div>
+                                      </div>
 
-                          {/* Content */}
-                          <div className="space-y-2">
-                            <p className="md:hidden font-bold text-orange-500 text-lg">
-                              {(product as any).minPrice &&
-                              (product as any).maxPrice
-                                ? (product as any).minPrice ===
-                                  (product as any).maxPrice
-                                  ? (product as any).minPrice.toLocaleString()
-                                  : `${(product as any).minPrice.toLocaleString()}-${(product as any).maxPrice.toLocaleString()}`
-                                : product?.price.toLocaleString()}{" "}
-                              frw
-                            </p>
-                            <h3 className="font-semibold text-gray-900 text-sm md:text-lg truncate">
-                              {product?.name}
-                            </h3>
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  onClick={(e) => handleAddToCart(e, product)}
-                                  disabled={
-                                    ((product as any).stock ??
-                                      product?.stock ??
-                                      0) <= 0
-                                  }
-                                  className={cn(
-                                    "h-10 w-10 rounded-md flex items-center justify-center bg-white border transition",
-                                    ((product as any).stock ??
-                                      product?.stock ??
-                                      0) <= 0
-                                      ? "opacity-50 cursor-not-allowed border-gray-300"
-                                      : "border-gray-300 hover:border-orange-500"
-                                  )}
-                                  aria-label="Add to cart"
-                                >
-                                  <ShoppingCart
-                                    className={cn(
-                                      "h-5 w-5",
-                                      ((product as any).stock ??
-                                        product?.stock ??
-                                        0) <= 0
-                                        ? "text-gray-400"
-                                        : "text-orange-500"
-                                    )}
-                                  />
-                                </button>
+                                      {/* Content */}
+                                      <div className="space-y-2">
+                                         <p className="md:hidden font-bold text-orange-500 text-lg">
+                                            {(product as any).minPrice &&
+                                            (product as any).maxPrice
+                                               ? (product as any).minPrice ===
+                                                 (product as any).maxPrice
+                                                  ? (
+                                                       product as any
+                                                    ).minPrice.toLocaleString()
+                                                  : `${(
+                                                       product as any
+                                                    ).minPrice.toLocaleString()}-${(
+                                                       product as any
+                                                    ).maxPrice.toLocaleString()}`
+                                               : product?.price.toLocaleString()}{" "}
+                                            frw
+                                         </p>
+                                         <h3 className="font-semibold text-gray-900 text-sm md:text-lg truncate">
+                                            {product?.name}
+                                         </h3>
+                                         <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                               <button
+                                                  onClick={(e) =>
+                                                     handleAddToCart(e, product)
+                                                  }
+                                                  disabled={
+                                                     ((product as any).stock ??
+                                                        product?.stock ??
+                                                        0) <= 0
+                                                  }
+                                                  className={cn(
+                                                     "h-10 w-10 rounded-md flex items-center justify-center bg-white border transition",
+                                                     ((product as any).stock ??
+                                                        product?.stock ??
+                                                        0) <= 0
+                                                        ? "opacity-50 cursor-not-allowed border-gray-300"
+                                                        : "border-gray-300 hover:border-orange-500"
+                                                  )}
+                                                  aria-label="Add to cart"
+                                               >
+                                                  <ShoppingCart
+                                                     className={cn(
+                                                        "h-5 w-5",
+                                                        ((product as any)
+                                                           .stock ??
+                                                           product?.stock ??
+                                                           0) <= 0
+                                                           ? "text-gray-400"
+                                                           : "text-orange-500"
+                                                     )}
+                                                  />
+                                               </button>
 
                                                <Button
                                                   onClick={(e) =>
