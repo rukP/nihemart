@@ -292,13 +292,27 @@ export function useAddresses() {
          try {
             setLoading(true);
             const raw = localStorage.getItem(GUEST_ADDRESS_KEY);
-            if (!raw) return null;
+            if (!raw) {
+               console.warn("No guest address found in localStorage to update");
+               return null;
+            }
             const parsed = JSON.parse(raw) as Address;
-            if (!parsed) return null;
-            const merged = { ...parsed, ...updates } as Address;
+            if (!parsed) {
+               console.warn("Failed to parse guest address from localStorage");
+               return null;
+            }
+            // Verify the ID matches (for guest addresses, we only have one)
+            if (parsed.id !== id) {
+               console.warn(`Guest address ID mismatch: expected ${id}, found ${parsed.id}`);
+               // For guests, we only have one address, so update it anyway
+               // but log the mismatch for debugging
+            }
+            const merged = { ...parsed, ...updates, id: parsed.id } as Address;
             localStorage.setItem(GUEST_ADDRESS_KEY, JSON.stringify(merged));
             setAddresses([merged]);
-            setSelected({ ...merged });
+            if (selected?.id === parsed.id || selected?.id === id) {
+               setSelected({ ...merged });
+            }
             return merged;
          } catch (e) {
             console.error("Failed to update guest address", e);
@@ -338,13 +352,30 @@ export function useAddresses() {
          }
       }
 
-      // Guest removal: clear the guest temp address
+      // Guest removal: clear the guest temp address (verify ID if possible)
       if (typeof window !== "undefined") {
          try {
             setLoading(true);
+            const raw = localStorage.getItem(GUEST_ADDRESS_KEY);
+            if (raw) {
+               try {
+                  const parsed = JSON.parse(raw) as Address;
+                  // Verify ID matches if we have a stored address
+                  if (parsed.id && parsed.id !== id) {
+                     console.warn(`Guest address ID mismatch on delete: expected ${id}, found ${parsed.id}`);
+                     // For guests, we only have one address, so delete it anyway
+                     // but log the mismatch for debugging
+                  }
+               } catch (parseErr) {
+                  // If parsing fails, just remove the item
+                  console.warn("Failed to parse guest address before deletion", parseErr);
+               }
+            }
             localStorage.removeItem(GUEST_ADDRESS_KEY);
             setAddresses([]);
-            setSelected(null);
+            if (selected?.id === id) {
+               setSelected(null);
+            }
             return true;
          } catch (e) {
             console.error("Failed to remove guest address", e);
@@ -359,7 +390,36 @@ export function useAddresses() {
    };
 
    const setDefaultAddress = async (id: string) => {
-      if (!user) return null;
+      // For guests, they only have one address, so setting default doesn't apply
+      // But we can mark it as default in localStorage for consistency
+      if (!user) {
+         if (typeof window !== "undefined") {
+            try {
+               setLoading(true);
+               const raw = localStorage.getItem(GUEST_ADDRESS_KEY);
+               if (raw) {
+                  const parsed = JSON.parse(raw) as Address;
+                  if (parsed.id === id) {
+                     const updated = { ...parsed, is_default: true } as Address;
+                     localStorage.setItem(GUEST_ADDRESS_KEY, JSON.stringify(updated));
+                     setAddresses([updated]);
+                     if (selected?.id === id) {
+                        setSelected({ ...updated });
+                     }
+                     return true;
+                  }
+               }
+               return false;
+            } catch (e) {
+               console.error("Failed to set default guest address", e);
+               setError("Failed to set default address");
+               return false;
+            } finally {
+               setLoading(false);
+            }
+         }
+         return false;
+      }
 
       try {
          setLoading(true);

@@ -1704,7 +1704,7 @@ export async function createOrder({
                      process.env.NEWSLETTER_ADMIN_EMAIL;
                   if (envAdmin) {
                      try {
-                        const { buildOrderConfirmationEmail } = await import(
+                        const { buildAdminOrderNotificationEmail } = await import(
                            "@/lib/email/notifications"
                         );
                         const customerName =
@@ -1714,15 +1714,21 @@ export async function createOrder({
                                  ? ` ${quickOrder.customer_last_name}`
                                  : "")
                            ).trim() || undefined;
-                        const { subject, html } = buildOrderConfirmationEmail({
+                        const { subject, html } = buildAdminOrderNotificationEmail({
                            order_id: quickOrder.id,
                            order_number: quickOrder.order_number,
                            items: quickOrder.items || [],
                            total: quickOrder.total,
+                           subtotal: quickOrder.subtotal,
+                           tax: quickOrder.tax,
                            currency: quickOrder.currency,
                            customer_name: customerName,
+                           customer_phone: quickOrder.customer_phone,
+                           customer_email: quickOrder.customer_email,
                            delivery_address: quickOrder.delivery_address,
                            delivery_time: quickOrder.delivery_time ?? undefined,
+                           schedule_notes: quickOrder.schedule_notes ?? undefined,
+                           payment_method: quickOrder.payment_method,
                         });
                         const { sendEmail } = await import("@/lib/email/send");
                         const r = await sendEmail(envAdmin, subject, html);
@@ -1853,8 +1859,8 @@ export async function createOrder({
 
                if (adminEmails.length > 0) {
                   try {
-                     // Build admin-facing email using the same confirmation template
-                     const { buildOrderConfirmationEmail } = await import(
+                     // Build admin-facing email using admin-specific template
+                     const { buildAdminOrderNotificationEmail } = await import(
                         "@/lib/email/notifications"
                      );
                      const customerName =
@@ -1864,15 +1870,21 @@ export async function createOrder({
                               ? ` ${quickOrder.customer_last_name}`
                               : "")
                         ).trim() || undefined;
-                     const { subject, html } = buildOrderConfirmationEmail({
+                     const { subject, html } = buildAdminOrderNotificationEmail({
                         order_id: quickOrder.id,
                         order_number: quickOrder.order_number,
                         items: quickOrder.items || [],
                         total: quickOrder.total,
+                        subtotal: quickOrder.subtotal,
+                        tax: quickOrder.tax,
                         currency: quickOrder.currency,
                         customer_name: customerName,
+                        customer_phone: quickOrder.customer_phone,
+                        customer_email: quickOrder.customer_email,
                         delivery_address: quickOrder.delivery_address,
                         delivery_time: quickOrder.delivery_time ?? undefined,
+                        schedule_notes: quickOrder.schedule_notes ?? undefined,
+                        payment_method: quickOrder.payment_method,
                      });
 
                      if (typeof window === "undefined") {
@@ -1935,7 +1947,7 @@ export async function createOrder({
                      process.env.NEWSLETTER_ADMIN_EMAIL;
                   if (envAdmin) {
                      try {
-                        const { buildOrderConfirmationEmail } = await import(
+                        const { buildAdminOrderNotificationEmail } = await import(
                            "@/lib/email/notifications"
                         );
                         const customerName =
@@ -1945,15 +1957,21 @@ export async function createOrder({
                                  ? ` ${quickOrder.customer_last_name}`
                                  : "")
                            ).trim() || undefined;
-                        const { subject, html } = buildOrderConfirmationEmail({
+                        const { subject, html } = buildAdminOrderNotificationEmail({
                            order_id: quickOrder.id,
                            order_number: quickOrder.order_number,
                            items: quickOrder.items || [],
                            total: quickOrder.total,
+                           subtotal: quickOrder.subtotal,
+                           tax: quickOrder.tax,
                            currency: quickOrder.currency,
                            customer_name: customerName,
+                           customer_phone: quickOrder.customer_phone,
+                           customer_email: quickOrder.customer_email,
                            delivery_address: quickOrder.delivery_address,
                            delivery_time: quickOrder.delivery_time ?? undefined,
+                           schedule_notes: quickOrder.schedule_notes ?? undefined,
+                           payment_method: quickOrder.payment_method,
                         });
                         if (typeof window === "undefined") {
                            const { sendEmail } = await import(
@@ -2002,9 +2020,103 @@ export async function createOrder({
          }
       })().catch((e) => console.warn("Background notify failed:", e));
 
-      // NOTE: stock updates are intentionally deferred until delivery confirmation
-      // to avoid reducing stock for orders that may be cancelled before fulfillment.
-      // Stock will be adjusted when the order moves to `delivered` status.
+      // Decrement stock immediately when order is created
+      // This ensures stock is reserved as soon as an order is placed
+      (async () => {
+         try {
+            if (!itemsData || !Array.isArray(itemsData)) return;
+
+            await Promise.all(
+               itemsData.map(async (item: any) => {
+                  try {
+                     const qty = Number(item.quantity || 0);
+                     if (qty <= 0) return;
+
+                     // Handle variation stock first (if variation exists)
+                     if (item.product_variation_id) {
+                        const { data: varRow, error: varErr } = await sb
+                           .from("product_variations")
+                           .select("id, stock")
+                           .eq("id", item.product_variation_id)
+                           .maybeSingle();
+                        if (varErr) {
+                           console.warn(
+                              "Failed to fetch product_variation for stock decrement:",
+                              varErr
+                           );
+                        } else if (varRow && typeof varRow.stock === "number") {
+                           const newStock = Math.max(0, Number(varRow.stock) - qty);
+                           const { error: upErr } = await sb
+                              .from("product_variations")
+                              .update({ stock: newStock })
+                              .eq("id", item.product_variation_id);
+                           if (upErr) {
+                              console.warn(
+                                 "Failed to update variation stock on order creation:",
+                                 upErr
+                              );
+                           } else {
+                              console.log(
+                                 `Stock decremented for variation ${item.product_variation_id}: ${varRow.stock} -> ${newStock}`
+                              );
+                           }
+                        }
+                     }
+
+                     // Handle product stock (if product_id exists and track_quantity is enabled)
+                     if (item.product_id) {
+                        const { data: pRow, error: pErr } = await sb
+                           .from("products")
+                           .select("id, stock, track_quantity")
+                           .eq("id", item.product_id)
+                           .maybeSingle();
+                        if (pErr) {
+                           console.warn(
+                              "Failed to fetch product for stock decrement:",
+                              pErr
+                           );
+                        } else if (
+                           pRow &&
+                           pRow.track_quantity &&
+                           typeof pRow.stock === "number"
+                        ) {
+                           const newStock = Math.max(
+                              0,
+                              Number(pRow.stock) - qty
+                           );
+                           const { error: upErr } = await sb
+                              .from("products")
+                              .update({ stock: newStock })
+                              .eq("id", item.product_id);
+                           if (upErr) {
+                              console.warn(
+                                 "Failed to update product stock on order creation:",
+                                 upErr
+                              );
+                           } else {
+                              console.log(
+                                 `Stock decremented for product ${item.product_id}: ${pRow.stock} -> ${newStock}`
+                              );
+                           }
+                        }
+                     }
+                  } catch (innerErr) {
+                     console.warn(
+                        "Error decrementing stock for order item:",
+                        innerErr
+                     );
+                  }
+               })
+            );
+         } catch (stockErr) {
+            console.warn(
+               "Error running stock decrement on order creation:",
+               stockErr
+            );
+         }
+      })().catch((bgErr) =>
+         console.warn("Background stock decrement on order creation failed:", bgErr)
+      );
 
       // If this order uses Cash on Delivery, create an initial payment record
       try {
@@ -2188,10 +2300,11 @@ export async function updateOrderStatus(
       })().catch((e) => console.warn("Background status notify failed:", e));
    }
 
-   // If the order was marked delivered, decrement stock for items that are
-   // not already refunded/approved. This runs on the server (service role).
+   // If the order was marked delivered, mark COD payments as completed
+   // NOTE: Stock is now decremented immediately when orders are created,
+   // so we no longer decrement stock on delivery to avoid double-decrementing.
    if (status === "delivered") {
-      // Also, if this order was paid via Cash on Delivery, mark its payment(s) as completed
+      // If this order was paid via Cash on Delivery, mark its payment(s) as completed
       (async () => {
          try {
             const { data: orderRow, error: orderErr } = await sb
@@ -2260,121 +2373,116 @@ export async function updateOrderStatus(
          console.warn("Background COD payment update failed:", e)
       );
 
+   }
+
+   // If the order was cancelled, restore stock and mark any pending COD payments as failed
+   if (status === "cancelled") {
       (async () => {
          try {
+            // Restore stock for all items in the cancelled order
             const { data: items, error: itemsErr } = await sb
                .from("order_items")
                .select(
                   "id, quantity, product_id, product_variation_id, refund_status"
                )
                .eq("order_id", id);
+
             if (itemsErr) {
                console.warn(
-                  "Failed to fetch order items for stock decrement on delivery:",
+                  "Failed to fetch order items for stock restoration on cancellation:",
                   itemsErr
                );
-               return;
+            } else if (items && Array.isArray(items)) {
+               await Promise.all(
+                  items.map(async (it: any) => {
+                     try {
+                        // Only restore stock if item hasn't been refunded
+                        if (it.refund_status === "approved" || it.refund_status === "refunded") {
+                           console.log(
+                              `Skipping stock restoration for item ${it.id} - already refunded`
+                           );
+                           return;
+                        }
+
+                        const qty = Number(it.quantity || 0);
+                        if (qty <= 0) return;
+
+                        // Handle variation stock first (if variation exists)
+                        if (it.product_variation_id) {
+                           const { data: varRow, error: varErr } = await sb
+                              .from("product_variations")
+                              .select("id, stock")
+                              .eq("id", it.product_variation_id)
+                              .maybeSingle();
+                           if (varErr) {
+                              console.warn(
+                                 "Failed to fetch product_variation for stock restoration:",
+                                 varErr
+                              );
+                           } else if (varRow && typeof varRow.stock === "number") {
+                              const newStock = Number(varRow.stock) + qty;
+                              const { error: upErr } = await sb
+                                 .from("product_variations")
+                                 .update({ stock: newStock })
+                                 .eq("id", it.product_variation_id);
+                              if (upErr) {
+                                 console.warn(
+                                    "Failed to update variation stock on cancellation:",
+                                    upErr
+                                 );
+                              } else {
+                                 console.log(
+                                    `Stock restored for variation ${it.product_variation_id} (cancelled order): ${varRow.stock} -> ${newStock}`
+                                 );
+                              }
+                           }
+                        }
+
+                        // Handle product stock (if product_id exists and track_quantity is enabled)
+                        if (it.product_id) {
+                           const { data: pRow, error: pErr } = await sb
+                              .from("products")
+                              .select("id, stock, track_quantity")
+                              .eq("id", it.product_id)
+                              .maybeSingle();
+                           if (pErr) {
+                              console.warn(
+                                 "Failed to fetch product for stock restoration:",
+                                 pErr
+                              );
+                           } else if (
+                              pRow &&
+                              pRow.track_quantity &&
+                              typeof pRow.stock === "number"
+                           ) {
+                              const newStock = Number(pRow.stock) + qty;
+                              const { error: upErr } = await sb
+                                 .from("products")
+                                 .update({ stock: newStock })
+                                 .eq("id", it.product_id);
+                              if (upErr) {
+                                 console.warn(
+                                    "Failed to update product stock on cancellation:",
+                                    upErr
+                                 );
+                              } else {
+                                 console.log(
+                                    `Stock restored for product ${it.product_id} (cancelled order): ${pRow.stock} -> ${newStock}`
+                                 );
+                              }
+                           }
+                        }
+                     } catch (innerErr) {
+                        console.warn(
+                           "Error restoring stock for cancelled order item:",
+                           innerErr
+                        );
+                     }
+                  })
+               );
             }
 
-            await Promise.all(
-               (items || []).map(async (it: any) => {
-                  try {
-                     const qty = Number(it.quantity || 0);
-                     if (!qty || qty <= 0) return;
-
-                     // If the item already has a refund approved/approved-like state,
-                     // skip decrementing to avoid double adjustments. We only decrement
-                     // for items without an approved refund.
-                     if (
-                        it.refund_status === "approved" ||
-                        it.refund_status === "refunded"
-                     ) {
-                        return;
-                     }
-
-                     if (it.product_variation_id) {
-                        const { data: varRow, error: varErr } = await sb
-                           .from("product_variations")
-                           .select("id, stock")
-                           .eq("id", it.product_variation_id)
-                           .maybeSingle();
-                        if (varErr) {
-                           console.warn(
-                              "Failed to fetch product_variation for stock decrement:",
-                              varErr
-                           );
-                        } else if (varRow && typeof varRow.stock === "number") {
-                           const newStock = Math.max(
-                              0,
-                              Number(varRow.stock) - qty
-                           );
-                           const { error: uErr } = await sb
-                              .from("product_variations")
-                              .update({ stock: newStock })
-                              .eq("id", it.product_variation_id);
-                           if (uErr)
-                              console.warn(
-                                 "Failed to update variation stock:",
-                                 uErr
-                              );
-                        }
-                        return;
-                     }
-
-                     if (it.product_id) {
-                        const { data: pRow, error: pErr } = await sb
-                           .from("products")
-                           .select("id, stock, track_quantity")
-                           .eq("id", it.product_id)
-                           .maybeSingle();
-                        if (pErr) {
-                           console.warn(
-                              "Failed to fetch product for stock decrement:",
-                              pErr
-                           );
-                        } else if (
-                           pRow &&
-                           pRow.track_quantity &&
-                           typeof pRow.stock === "number"
-                        ) {
-                           const newStock = Math.max(
-                              0,
-                              Number(pRow.stock) - qty
-                           );
-                           const { error: upErr } = await sb
-                              .from("products")
-                              .update({ stock: newStock })
-                              .eq("id", it.product_id);
-                           if (upErr)
-                              console.warn(
-                                 "Failed to update product stock:",
-                                 upErr
-                              );
-                        }
-                     }
-                  } catch (innerErr) {
-                     console.warn(
-                        "Error decrementing stock for delivered item:",
-                        innerErr
-                     );
-                  }
-               })
-            );
-         } catch (stockErr) {
-            console.warn(
-               "Error running stock decrement on delivery:",
-               stockErr
-            );
-         }
-      })().catch((bgErr) =>
-         console.warn("Background stock decrement failed:", bgErr)
-      );
-   }
-
-   // If the order was cancelled, mark any pending COD payments as failed
-   if (status === "cancelled") {
-      (async () => {
-         try {
+            // Mark any pending COD payments as failed
             const { data: orderRow, error: orderErr } = await sb
                .from("orders")
                .select("id, payment_method")
@@ -2424,12 +2532,12 @@ export async function updateOrderStatus(
             }
          } catch (e) {
             console.warn(
-               "Error while checking/updating COD payments on cancellation:",
+               "Error while restoring stock/updating COD payments on cancellation:",
                e
             );
          }
       })().catch((e) =>
-         console.warn("Background COD payment cancellation failed:", e)
+         console.warn("Background stock restoration/COD payment cancellation failed:", e)
       );
    }
 

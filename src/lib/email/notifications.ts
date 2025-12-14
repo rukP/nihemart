@@ -17,9 +17,13 @@ export type OrderMeta = {
   currency?: string;
   customer_name?: string;
   customer_phone?: string;
+  customer_email?: string;
   delivery_address?: string;
   delivery_time?: string;
   schedule_notes?: string;
+  payment_method?: string;
+  subtotal?: number;
+  tax?: number;
 };
 
 function formatCurrency(amount: number, currency = "RWF"): string {
@@ -188,5 +192,111 @@ export function buildRiderAssignmentEmail(
       }/orders\" style=\"background:#FF6B35;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:600\">View order</a></div>
    `;
   const subject = `New delivery assignment — ${orderNo}`;
+  return { subject, html: wrapBranded(subject, body, brand) };
+}
+
+export function buildAdminOrderNotificationEmail(
+  meta: OrderMeta,
+  brand?: BrandEmailOptions
+) {
+  const orderNo = meta.order_number
+    ? `#${meta.order_number.replace(/^#/, "")}`
+    : meta.order_id || "an order";
+  const customer = meta.customer_name || "Customer";
+  const phone = meta.customer_phone || "";
+  const email = meta.customer_email || "";
+  const total = typeof meta.total === "number" ? meta.total : 0;
+  const subtotal = typeof meta.subtotal === "number" ? meta.subtotal : total;
+  const tax = typeof meta.tax === "number" ? meta.tax : 0;
+  const currency = meta.currency || "RWF";
+  const paymentMethod = meta.payment_method || "Not specified";
+  
+  // Format payment method for display
+  const formatPaymentMethod = (method: string) => {
+    const methods: Record<string, string> = {
+      mtn_momo: "MTN Mobile Money",
+      airtel_money: "Airtel Money",
+      visa_card: "Visa Card",
+      mastercard: "MasterCard",
+      spenn: "SPENN",
+      cash_on_delivery: "Cash on Delivery",
+    };
+    return methods[method] || method.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
+  const body = `
+      <div style=\"font-size:18px;color:#1a1a1a;font-weight:600;\">New Order Received — ${orderNo}</div>
+      <div style=\"font-size:14px;color:#444;margin-top:6px\">A new order has been placed and requires your attention.</div>
+      
+      <div style=\"margin-top:16px;padding:12px;background:#f8f9fa;border-radius:8px;border-left:3px solid #1DB4E7\">
+        <div style=\"font-size:14px;color:#333;font-weight:600;margin-bottom:8px\">Order Details</div>
+        <div style=\"font-size:13px;color:#555;margin-top:4px\"><strong>Order Number:</strong> ${orderNo}</div>
+        <div style=\"font-size:13px;color:#555;margin-top:4px\"><strong>Customer:</strong> ${customer}</div>
+        ${phone ? `<div style=\"font-size:13px;color:#555;margin-top:4px\"><strong>Phone:</strong> ${phone}</div>` : ""}
+        ${email ? `<div style=\"font-size:13px;color:#555;margin-top:4px\"><strong>Email:</strong> ${email}</div>` : ""}
+        <div style=\"font-size:13px;color:#555;margin-top:4px\"><strong>Payment Method:</strong> ${formatPaymentMethod(paymentMethod)}</div>
+      </div>
+
+      ${orderItemsTable(meta.items)}
+      
+      <div style=\"border-top:1px solid #eee;margin:12px 0\"></div>
+      ${subtotal !== total ? `
+        <div style=\"display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px\">
+          <span>Subtotal</span>
+          <span>${formatCurrency(subtotal, currency)}</span>
+        </div>
+        ${tax > 0 ? `
+        <div style=\"display:flex;justify-content:space-between;font-size:13px;color:#666;margin-bottom:4px\">
+          <span>Delivery Fee</span>
+          <span>${formatCurrency(tax, currency)}</span>
+        </div>
+        ` : ""}
+      ` : ""}
+      <div style=\"display:flex;justify-content:space-between;font-size:14px;color:#1a1a1a;font-weight:600;margin-top:8px;padding-top:8px;border-top:1px solid #eee\">
+        <span>Total</span>
+        <span>${formatCurrency(total, currency)}</span>
+      </div>
+      
+      ${
+        meta.delivery_address
+          ? `<div style=\"margin-top:12px;padding:12px;background:#f8f9fa;border-radius:8px\">
+              <div style=\"font-size:13px;color:#333;font-weight:600;margin-bottom:4px\">Delivery Address</div>
+              <div style=\"font-size:13px;color:#555\">${meta.delivery_address}</div>
+            </div>`
+          : ""
+      }
+      ${
+        meta.delivery_time
+          ? (() => {
+              try {
+                const d = new Date(meta.delivery_time as string);
+                const fmt = d.toLocaleString("en-RW", {
+                  timeZone: "Africa/Kigali",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "numeric",
+                } as any);
+                return `<div style=\"font-size:12px;color:#666;margin-top:8px\"><strong>Requested delivery time:</strong> ${fmt} (Kigali)</div>`;
+              } catch (e) {
+                return `<div style=\"font-size:12px;color:#666;margin-top:8px\"><strong>Requested delivery time:</strong> ${meta.delivery_time}</div>`;
+              }
+            })()
+          : ""
+      }
+      ${
+        meta.schedule_notes
+          ? `<div style=\"font-size:12px;color:#666;margin-top:6px\"><strong>Schedule notes:</strong> ${String(meta.schedule_notes)}</div>`
+          : ""
+      }
+      
+      <div style=\"text-align:center;margin-top:20px\">
+        <a href=\"${
+          process.env.NEXT_PUBLIC_APP_URL || "#"
+        }/admin/orders\" style=\"background:#1DB4E7;color:#fff;text-decoration:none;padding:12px 24px;border-radius:8px;display:inline-block;font-weight:600\">View Order in Dashboard</a>
+      </div>
+   `;
+  const subject = `New Order — ${orderNo}`;
   return { subject, html: wrapBranded(subject, body, brand) };
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PAYMENT_METHODS } from "@/lib/services/kpay";
-import { Banknote, CreditCard } from "lucide-react";
+import { Banknote, CreditCard, Edit2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import MobileMoneyPhoneDialog from "./MobileMoneyPhoneDialog";
 import Image from "next/image";
@@ -190,7 +190,20 @@ export default function PaymentMethodSelector({
       const { method } = mobileMoneyDialog;
       if (method && onMobileMoneyPhoneChange) {
          onMobileMoneyPhoneChange(method, phoneNumber);
-         onMethodChange(method);
+         // Only change method if it's not already selected (for edit case)
+         if (selectedMethod !== method) {
+            onMethodChange(method);
+         }
+      }
+   };
+
+   const handleEditPhone = (
+      e: React.MouseEvent,
+      method: "mtn_momo" | "airtel_money"
+   ) => {
+      e.stopPropagation(); // Prevent radio button selection
+      if (onMobileMoneyPhoneChange) {
+         setMobileMoneyDialog({ isOpen: true, method });
       }
    };
 
@@ -234,12 +247,25 @@ export default function PaymentMethodSelector({
                         <p className="font-medium text-sm sm:text-base text-gray-900">
                            {details.name}
                         </p>
-                        {/* Mobile Money Phone Numbers */}
+                        {/* Mobile Money Phone Numbers with Edit Button */}
                         {(method === "mtn_momo" || method === "airtel_money") &&
                            mobileMoneyPhones[method] && (
-                              <p className="text-xs text-gray-600 font-mono mt-0.5">
-                                 {mobileMoneyPhones[method]}
-                              </p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                 <p className="text-xs text-gray-600 font-mono">
+                                    {mobileMoneyPhones[method]}
+                                 </p>
+                                 {onMobileMoneyPhoneChange && (
+                                    <button
+                                       type="button"
+                                       onClick={(e) => handleEditPhone(e, method)}
+                                       className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                       title="Edit phone number"
+                                       aria-label="Edit phone number"
+                                    >
+                                       <Edit2 className="h-3 w-3 text-gray-500 hover:text-orange-600" />
+                                    </button>
+                                 )}
+                              </div>
                            )}
                      </div>
 

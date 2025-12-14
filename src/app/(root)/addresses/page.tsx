@@ -359,25 +359,8 @@ const AddressesPage = () => {
       }
    };
 
-   if (!isLoggedIn) {
-      return (
-         <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-4xl">
-            <div className="text-center py-8 sm:py-12">
-               <MapPin className="h-16 w-16 sm:h-24 sm:w-24 text-muted-foreground mx-auto mb-4 sm:mb-6" />
-               <h2 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">Please sign in</h2>
-               <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base px-4">
-                  You must be signed in to manage addresses.
-               </p>
-               <Button 
-                  onClick={() => router.push('/signin')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-sm sm:text-base"
-               >
-                  Sign In
-               </Button>
-            </div>
-         </div>
-      );
-   }
+   // Allow guests to manage their persisted addresses (stored in localStorage)
+   // Show a notice that addresses are temporary for guests
 
    return (
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-[90vw]">
@@ -407,6 +390,23 @@ const AddressesPage = () => {
                Add New Address
             </Button>
          </div>
+
+         {/* Guest Notice - only show for guests */}
+         {!isLoggedIn && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+               <p className="text-sm text-yellow-800">
+                  <strong>Guest Mode:</strong> Your addresses are saved temporarily in this browser. 
+                  To keep your addresses permanently, please{" "}
+                  <button
+                     onClick={() => router.push('/signin')}
+                     className="underline font-semibold hover:text-yellow-900"
+                  >
+                     sign in
+                  </button>
+                  .
+               </p>
+            </div>
+         )}
 
          {/* Add/Edit Form */}
          <Collapsible open={showAddForm} onOpenChange={setShowAddForm}>
@@ -692,7 +692,8 @@ const AddressesPage = () => {
                                  >
                                     {selected?.id === addr.id ? "Selected" : "Select"}
                                  </Button>
-                                 {!addr.is_default && (
+                                 {/* Hide "Set Default" for guests since they only have one address */}
+                                 {isLoggedIn && !addr.is_default && (
                                     <Button
                                        size="sm"
                                        variant="outline"

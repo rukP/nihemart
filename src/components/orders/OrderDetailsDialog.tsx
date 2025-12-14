@@ -13,6 +13,8 @@ import {
    BadgeCheck,
    ShoppingCart,
    ReceiptText,
+   CreditCard,
+   Smartphone,
 } from "lucide-react";
 import { useState } from "react";
 import { useOrders } from "@/hooks/useOrders";
@@ -174,6 +176,36 @@ export function OrderDetailsDialog({
       }
 
       return null;
+   };
+
+   // Helper function to format payment method name
+   const getPaymentMethodName = (method?: string) => {
+      if (!method) return "Not specified";
+      const names: Record<string, string> = {
+         mtn_momo: "MTN Mobile Money",
+         airtel_money: "Airtel Money",
+         visa_card: "Visa Card",
+         mastercard: "MasterCard",
+         spenn: "SPENN",
+         cash_on_delivery: "Cash on Delivery",
+      };
+      return (
+         names[method] ||
+         method.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+      );
+   };
+
+   // Helper function to get payment method icon
+   const getPaymentMethodIcon = (method?: string) => {
+      if (!method) return <CreditCard className="h-4 w-4" />;
+      if (
+         method.includes("momo") ||
+         method.includes("mtn") ||
+         method.includes("airtel")
+      ) {
+         return <Smartphone className="h-4 w-4" />;
+      }
+      return <CreditCard className="h-4 w-4" />;
    };
 
    useEffect(() => {
@@ -583,6 +615,19 @@ export function OrderDetailsDialog({
                                  {Number(order.total || 0).toLocaleString()} RWF
                               </p>
                            </div>
+                           {order.payment_method && (
+                              <div className="flex justify-between items-center border-t pt-2 mt-2">
+                                 <div className="flex items-center gap-2">
+                                    {getPaymentMethodIcon(order.payment_method)}
+                                    <p className="text-muted-foreground">
+                                       Payment Method
+                                    </p>
+                                 </div>
+                                 <p className="font-medium">
+                                    {getPaymentMethodName(order.payment_method)}
+                                 </p>
+                              </div>
+                           )}
                         </div>
                      </Card>
 

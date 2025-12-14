@@ -41,13 +41,23 @@ export default function MobileMoneyPhoneDialog({
   // Reset phone number when dialog opens
   useEffect(() => {
     if (isOpen) {
-      const formatted = formatPhoneForDisplay(initialPhone);
+      // Normalize the initial phone to ensure it's in the correct format
+      const normalized = normalizePhoneValue(initialPhone || '');
+      const formatted = formatPhoneForDisplay(normalized);
       setPhoneDisplay(formatted);
-      setPhoneValue(initialPhone);
+      setPhoneValue(normalized);
       setError('');
-      validatePhone(initialPhone);
+      if (normalized) {
+        const validation = validateMobileOperator(normalized);
+        setIsValid(validation.valid);
+        if (!validation.valid && validation.message) {
+          setError(validation.message);
+        }
+      } else {
+        setIsValid(false);
+      }
     }
-  }, [isOpen, initialPhone]);
+  }, [isOpen, initialPhone, paymentMethod]);
 
   const formatPhoneForDisplay = (input: string): string => {
     const cleaned = input.replace(/[^\d]/g, '');
