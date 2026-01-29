@@ -1,0 +1,26 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+/**
+ * Hook to manage Command Palette state and keyboard shortcut
+ */
+export function useCommandPalette() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+K or Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return { open, setOpen };
+}
+

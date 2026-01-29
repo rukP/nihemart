@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Sitemap: /sitemap.xml
+
+# If you use staging or preview environments, you can disallow them by hostname.
+# For example:
+# Host: staging.nihemart.rw
+# User-agent: *
+# Disallow: /
