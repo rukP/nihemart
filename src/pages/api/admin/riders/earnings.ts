@@ -1,0 +1,59 @@
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== 'GET')
+    return res.status(405).json({ error: 'Method not allowed' });
+
+  // Get auth token from Authorization header or cookies
+  let authToken = req.headers.authorization?.replace('Bearer ', '');
+  if (!authToken && req.cookies['auth-token']) {
+    authToken = req.cookies['auth-token'];
+  }
+
+  if (!authToken) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    'https://api.nihemart.rw/api';
+
+  try {
+    // Default to 7 days to match the original logic
+    const days = req.query.days ? String(req.query.days) : '7';
+    const response = await fetch(
+      `${API_BASE}/riders/earnings/all?days=${days}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return res.status(response.status).json({
+        error:
+          errorData.error ||
+          errorData.message ||
+          'Failed to get rider earnings',
+      });
+    }
+
+    const result = await response.json();
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error('Error getting rider earnings:', error);
+    res.status(500).json({
+      error: 'Failed to get rider earnings',
+      details:
+        process.env.NODEENV === 'development' ? error.message : undefined,
+    });
+  }
+}

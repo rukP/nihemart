@@ -1,0 +1,6 @@
+auditConfig:
+  ignoreCves:
+    - 'true'
+
+overrides:
+  next@>=15.0.0-canary.0 <15.6.0-canary.61: '>=15.6.0-canary.61'
