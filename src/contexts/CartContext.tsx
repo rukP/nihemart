@@ -47,7 +47,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         return JSON.parse(savedCart) as CartItem[];
       }
     } catch (_e) {
-      console.error('Failed to parse cart from localStorage', _e);
+      // console.error('Failed to parse cart from localStorage', _e);
     }
     return [];
   });
@@ -93,12 +93,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
             // ignore
           }
         } catch (_e) {
-          console.error('Failed to persist cart to localStorage', _e);
+          // console.error('Failed to persist cart to localStorage', _e);
         }
         persistTimer.current = null;
       }, 50);
     } catch (_e) {
-      console.error('Failed to serialize cart for persistence', _e);
+      // console.error('Failed to serialize cart for persistence', _e);
     }
   }, [items]);
 
@@ -157,7 +157,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({
         localStorage.removeItem('cart');
       }
     } catch (_e) {
-      console.error('Failed to clear cart from localStorage', _e);
+      // console.error('Failed to clear cart from localStorage', _e);
     }
     toast.info('Cart Cleared', {
       description: 'All items have been removed from your cart.',

@@ -213,16 +213,14 @@ const CustomerTrendGraph = () => {
 
   // Debug: log source data used by the chart to the browser console
   try {
-    console.debug('CustomerTrendGraph - statsData:', statsData);
-
-    console.debug('CustomerTrendGraph - ordersResponse:', ordersResponse);
-
-    console.debug(
-      'CustomerTrendGraph - chartData:',
-      chartData,
-      'selectedMetric:',
-      selectedMetric
-    );
+    // console.debug('CustomerTrendGraph - statsData:', statsData);
+    // console.debug('CustomerTrendGraph - ordersResponse:', ordersResponse);
+    // console.debug(
+    //   'CustomerTrendGraph - chartData:',
+    //   chartData,
+    //   'selectedMetric:',
+    //   selectedMetric
+    // );
   } catch (_e) {}
 
   // Build simple metrics from available data

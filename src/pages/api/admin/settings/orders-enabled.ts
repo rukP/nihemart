@@ -70,7 +70,7 @@ export default async function handler(
     res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
     res.status(405).end('Method Not Allowed');
   } catch (err: any) {
-    console.error('orders-enabled handler error:', err);
+    // console.error('orders-enabled handler error:', err);
     res.status(500).json({ error: err?.message || 'Unknown error' });
   }
 }

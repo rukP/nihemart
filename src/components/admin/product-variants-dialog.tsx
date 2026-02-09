@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Package } from 'lucide-react';
+import { toast } from 'sonner';
 import { fetchProductForEdit } from '@/lib/api/products';
 
 interface ProductVariantsDialogProps {
@@ -95,7 +96,8 @@ export function ProductVariantsDialog({
         setVariations([]);
       }
     } catch (_error) {
-      console.error('Failed to load product variations:', _error);
+      // console.error('Failed to load product variations:', _error);
+      toast.error('Failed to load product variations');
       setProductInfo({ name: productName || 'Product', hasVariations: false });
       setVariations([]);
     } finally {

@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
         const text = errBody
           ? JSON.stringify(errBody)
           : await genRes.text().catch(() => '');
-        console.error('Failed to generate link from Supabase:', text);
+        // console.error('Failed to generate link from Supabase:', text);
 
         // If we tried fallback and still failed, return a softer error to UI
         if (fallbackTried) {
@@ -155,7 +155,7 @@ export async function POST(req: NextRequest) {
       genJson?.data?.action_link;
 
     if (!actionLink) {
-      console.warn('generate_link response missing action link', genJson);
+      // console.warn('generate_link response missing action link', genJson);
     }
 
     // Build email and send using shared helper
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
       });
     } catch (sendErr: any) {
-      console.error('Failed to send email via SMTP:', sendErr);
+      // console.error('Failed to send email via SMTP:', sendErr);
       return new Response(
         JSON.stringify({ ok: false, error: String(sendErr) }),
         {
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (err: any) {
-    console.error('/api/email/send error:', err);
+    // console.error('/api/email/send error:', err);
     return new Response(
       JSON.stringify({ error: err?.message || String(err) }),
       {

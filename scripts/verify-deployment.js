@@ -32,7 +32,7 @@ function log(message, type = 'info') {
     error: '✗',
   };
 
-  console.log(`${colors[type]}${icons[type]} ${message}${colors.reset}`);
+  // console.log(`${colors[type]}${icons[type]} ${message}${colors.reset}`);
 }
 
 function checkDirectory(dir, name) {
@@ -90,7 +90,7 @@ function checkStaticFiles() {
 }
 
 function main() {
-  console.log('\n=== Next.js Deployment Verification ===\n');
+  // console.log('\n=== Next.js Deployment Verification ===\n');
 
   let hasErrors = false;
 
@@ -138,7 +138,7 @@ function main() {
     log(`Found ${appChunkCount} app-specific chunks`, 'info');
   }
 
-  console.log('\n=== Summary ===\n');
+  // console.log('\n=== Summary ===\n');
 
   if (hasErrors) {
     log(
@@ -151,13 +151,13 @@ function main() {
       'Verification completed successfully! Build is ready for deployment.',
       'success'
     );
-    console.log('\nDeployment checklist:');
-    console.log('  1. Upload entire .next directory');
-    console.log('  2. Ensure all files maintain their structure');
-    console.log('  3. Set proper cache headers for _next/static files');
-    console.log('  4. Configure WebSocket support if using Socket.IO');
-    console.log('  5. Set environment variables (NEXT_PUBLIC_API_BASE, etc.)');
-    console.log('  6. Test the deployment before switching DNS\n');
+    // console.log('\nDeployment checklist:');
+    // console.log('  1. Upload entire .next directory');
+    // console.log('  2. Ensure all files maintain their structure');
+    // console.log('  3. Set proper cache headers for _next/static files');
+    // console.log('  4. Configure WebSocket support if using Socket.IO');
+    // console.log('  5. Set environment variables (NEXT_PUBLIC_API_BASE, etc.)');
+    // console.log('  6. Test the deployment before switching DNS\n');
     process.exit(0);
   }
 }

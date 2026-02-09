@@ -93,9 +93,9 @@ export default function PaymentModal({
   // Helper: finalize payment and create order if needed
   const finalizeAndCreateOrder = async (ref: string | undefined) => {
     if (!ref || orderCreatedRef.current) {
-      console.log(
-        '[PaymentModal] Skipping order creation - already created or no reference'
-      );
+      // console.log(
+      //   '[PaymentModal] Skipping order creation - already created or no reference'
+      // );
       return;
     }
 
@@ -108,8 +108,8 @@ export default function PaymentModal({
       });
 
       if (!finResp.ok) {
-        const errorData = await finResp.json().catch(() => ({}));
-        console.error('[PaymentModal] Finalize failed:', errorData);
+        const _errorData = await finResp.json().catch(() => ({}));
+        // console.error('[PaymentModal] Finalize failed:', errorData);
 
         // Try fallback order creation only if finalize failed
         await tryFallbackOrderCreation(ref);
@@ -138,7 +138,7 @@ export default function PaymentModal({
         await tryFallbackOrderCreation(ref);
       }
     } catch (_e) {
-      console.error('[PaymentModal] Finalize error:', _e);
+      // console.error('[PaymentModal] Finalize error:', _e);
       toast.error('Failed to finalize payment. Please contact support.');
       await tryFallbackOrderCreation(ref);
     } finally {
@@ -152,9 +152,9 @@ export default function PaymentModal({
 
     const snapshot = loadCheckoutSnapshot();
     if (!snapshot || !snapshot.items || snapshot.items.length === 0) {
-      console.warn(
-        '[PaymentModal] No checkout snapshot available for fallback order creation'
-      );
+      // console.warn(
+      //   '[PaymentModal] No checkout snapshot available for fallback order creation'
+      // );
       toast.error(
         'Payment completed but order creation failed. Please contact support with reference: ' +
           ref
@@ -206,8 +206,8 @@ export default function PaymentModal({
             await new Promise(resolve => setTimeout(resolve, 500));
             onSuccess(createdOrder.id);
           },
-          onError: (err: any) => {
-            console.error('Fallback order creation failed:', err);
+          onError: (_err: any) => {
+            // console.error('Fallback order creation failed:', err);
             toast.error(
               'Payment completed but order creation failed. Please contact support with reference: ' +
                 ref
@@ -216,7 +216,7 @@ export default function PaymentModal({
         });
       }
     } catch (_e) {
-      console.error('[PaymentModal] Fallback order creation error:', _e);
+      // console.error('[PaymentModal] Fallback order creation error:', _e);
       toast.error(
         'Failed to create order. Please contact support with reference: ' + ref
       );
@@ -240,12 +240,12 @@ export default function PaymentModal({
     try {
       if (!isBuyNowFlow) {
         clearCart();
-        console.log('[PaymentModal] Cart cleared (cart order)');
+        // console.log('[PaymentModal] Cart cleared (cart order)');
       } else {
-        console.log('[PaymentModal] Cart preserved (Buy Now order)');
+        // console.log('[PaymentModal] Cart preserved (Buy Now order)');
       }
     } catch (_e) {
-      console.error('[PaymentModal] Failed to handle cart:', _e);
+      // console.error('[PaymentModal] Failed to handle cart:', _e);
     }
   };
 
@@ -256,7 +256,7 @@ export default function PaymentModal({
       if (!raw) return null;
       return JSON.parse(raw);
     } catch (_err) {
-      console.warn('Failed to load checkout snapshot:', _err);
+      // console.warn('Failed to load checkout snapshot:', _err);
       return null;
     }
   };
@@ -325,17 +325,17 @@ export default function PaymentModal({
         (checkoutUrl || data.checkout_url) &&
         isPendingStatus
       ) {
-        console.log(
-          '[PaymentModal] Card payment detected, redirecting to KPay checkout:',
-          checkoutUrl || data.checkout_url
-        );
+        // console.log(
+        //   '[PaymentModal] Card payment detected, redirecting to KPay checkout:',
+        //   checkoutUrl || data.checkout_url
+        // );
 
         try {
           if (data.reference) {
             sessionStorage.setItem('kpay_reference', data.reference);
           }
         } catch (_e) {
-          console.warn('[PaymentModal] Failed to store reference:', _e);
+          // console.warn('[PaymentModal] Failed to store reference:', _e);
         }
 
         const kpayUrl = checkoutUrl || data.checkout_url;
@@ -384,10 +384,10 @@ export default function PaymentModal({
               }
             }
           } catch (_e) {
-            console.error(
-              '[PaymentModal] Failed to check status after KPay return:',
-              _e
-            );
+            // console.error(
+            //   '[PaymentModal] Failed to check status after KPay return:',
+            //   _e
+            // );
           }
         }
       }
@@ -447,9 +447,9 @@ export default function PaymentModal({
 
       // Verify we're still checking the same payment (user might have started a new payment)
       if (!payment || payment.reference !== currentPaymentRef) {
-        console.log(
-          '[PaymentModal] Payment reference changed, stopping status check'
-        );
+        // console.log(
+        //   '[PaymentModal] Payment reference changed, stopping status check'
+        // );
         return;
       }
 
@@ -514,9 +514,9 @@ export default function PaymentModal({
           } else {
             // Payment was just initiated, ignore "failed" status for now
             // Keep polling to check again later
-            console.log(
-              "[PaymentModal] Ignoring 'failed' status for recently initiated payment, will check again"
-            );
+            // console.log(
+            //   "[PaymentModal] Ignoring 'failed' status for recently initiated payment, will check again"
+            // );
             return;
           }
         }
@@ -535,7 +535,7 @@ export default function PaymentModal({
         }
         // Only log/show errors if this is still the current payment
         if (payment && payment.reference === currentPaymentRef) {
-          console.error('Payment status check error:', statusResult.error);
+          // console.error('Payment status check error:', statusResult.error);
           statusCheckCountRef.current++;
           const NOTICETHRESHOLD = 3;
           if (statusCheckCountRef.current >= NOTICETHRESHOLD) {
@@ -552,7 +552,7 @@ export default function PaymentModal({
       }
       // Only log errors if this is still the current payment
       if (payment && payment.reference === currentPaymentRef) {
-        console.error('Failed to check payment status:', _err);
+        // console.error('Failed to check payment status:', _err);
       }
     }
   };
@@ -704,7 +704,7 @@ export default function PaymentModal({
               { duration: 6000 }
             );
           } catch (_e) {
-            console.error('Failed to record timeout:', _e);
+            // console.error('Failed to record timeout:', _e);
           }
         })();
       }

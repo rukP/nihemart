@@ -127,9 +127,9 @@ const OrderClientPage = ({
 
           // If notification is about this order, refetch
           if (notificationOrderId === (orderId || order?.id)) {
-            console.log(
-              '[OrderPage] Notification received for this order, refetching...'
-            );
+            // console.log(
+            //   '[OrderPage] Notification received for this order, refetching...'
+            // );
             // Refetch order data
             if (orderId) {
               queryClient.invalidateQueries({
@@ -300,7 +300,7 @@ const OrderClientPage = ({
       const status = (order as any).refund_status || orderStatus;
       return status ? String(status) : '';
     } catch (_e) {
-      console.error('Error computing orderStateForActions:', _e);
+      // console.error('Error computing orderStateForActions:', _e);
       return '';
     }
   })();
@@ -472,7 +472,7 @@ const OrderClientPage = ({
       // Refresh the page to get updated data
       router.refresh();
     } catch (_error) {
-      console.error('Failed to update order status:', _error);
+      // console.error('Failed to update order status:', _error);
       toast.error('Failed to update order status');
 
       // Revert optimistic update on _error
@@ -690,10 +690,10 @@ const OrderClientPage = ({
                                 isItemRejected
                               );
                             } catch (_e) {
-                              console.error(
-                                'Error checking restricted statuses:',
-                                _e
-                              );
+                              // console.error(
+                              //   'Error checking restricted statuses:',
+                              //   _e
+                              // );
                               return (
                                 item.rejected === true ||
                                 item.refund_status === 'rejected'
@@ -1443,7 +1443,7 @@ const OrderClientPage = ({
                                     );
                                     router.refresh();
                                   } catch (_err) {
-                                    console.error(_err);
+                                    // console.error(_err);
                                   } finally {
                                     setIsUpdatingStatus(false);
                                   }
@@ -1472,10 +1472,10 @@ const OrderClientPage = ({
                           cancellableStatuses?.includes(order.status)
                         );
                       } catch (_e) {
-                        console.error(
-                          'Error checking cancellable statuses:',
-                          _e
-                        );
+                        // console.error(
+                        //   'Error checking cancellable statuses:',
+                        //   _e
+                        // );
                         return false;
                       }
                     })() && (
@@ -1532,7 +1532,7 @@ const OrderClientPage = ({
                                     router.push('/');
                                   }
                                 } catch (_err) {
-                                  console.error(_err);
+                                  // console.error(_err);
                                   // Error toast is handled by the hook
                                 } finally {
                                   setIsUpdatingStatus(false);
@@ -1791,12 +1791,12 @@ const OrderClientPage = ({
                     const isDelivered =
                       !!order?.delivered_at || order?.status === 'delivered';
 
-                    console.log('[REJECT/REFUND] Order status:', {
-                      status: order?.status,
-                      delivered_at: order?.delivered_at,
-                      isDelivered,
-                      itemId: rejectingItemId,
-                    });
+                    // console.log('[REJECT/REFUND] Order status:', {
+                    //   status: order?.status,
+                    //   delivered_at: order?.delivered_at,
+                    //   isDelivered,
+                    //   itemId: rejectingItemId,
+                    // });
 
                     const _res = await requestRefund.mutateAsync({
                       orderItemId: rejectingItemId,
@@ -1819,7 +1819,7 @@ const OrderClientPage = ({
                     const errorMsg = e?.message || 'Failed to process request';
                     toast.error(errorMsg);
 
-                    console.error('Refund/reject error:', e);
+                    // console.error('Refund/reject error:', e);
                   } finally {
                     setIsRejecting(false);
                   }

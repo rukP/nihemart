@@ -49,7 +49,7 @@ export default async function handler(
     const result = await response.json();
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error getting rider earnings:', error);
+    // console.error('Error getting rider earnings:', error);
     res.status(500).json({
       error: 'Failed to get rider earnings',
       details:

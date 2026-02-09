@@ -125,7 +125,7 @@ const dashboardAPI = {
       // Response can be { users: [...] } or array directly
       return Array.isArray(response) ? response : response.users || [];
     } catch (_error) {
-      console.error('Error fetching recent users:', _error);
+      // console.error('Error fetching recent users:', _error);
       return [];
     }
   },
@@ -201,8 +201,8 @@ const dashboardAPI = {
           .slice(0, 10);
 
         return productsWithCounts;
-      } catch (productError) {
-        console.error('Error fetching product details:', productError);
+      } catch (_productError) {
+        // console.error('Error fetching product details:', productError);
         // Fallback: try to use product info from order items if available
         const fallbackProducts: TopProduct[] = [];
         orders.forEach((order: any) => {
@@ -234,7 +234,7 @@ const dashboardAPI = {
         return fallbackProducts.sort((a, b) => b.order_count - a.order_count);
       }
     } catch (_error) {
-      console.error('Error fetching top products:', _error);
+      // console.error('Error fetching top products:', _error);
       return [];
     }
   },

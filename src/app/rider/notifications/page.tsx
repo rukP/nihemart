@@ -55,10 +55,10 @@ const RiderNotificationsPage = () => {
       .filter(n => {
         return n && n.id && (n.title || n.body) && n.created_at;
       });
-    console.debug(
-      '[RiderNotificationsPage] Valid notifications after filtering:',
-      validNotifications.length
-    );
+    // console.debug(
+    //   '[RiderNotificationsPage] Valid notifications after filtering:',
+    //   validNotifications.length
+    // );
     setLocalNotifications(validNotifications);
   }, [notifications]);
 
@@ -93,7 +93,7 @@ const RiderNotificationsPage = () => {
       setLocalNotifications(prev => prev.map(p => ({ ...p, read: true })));
       toast.success('You’re all caught up! All notifications marked as read.');
     } catch (_e) {
-      console.error(_e);
+      // console.error(_e);
       toast.error('Failed to mark notifications as read');
     } finally {
       setIsLoading(false);
@@ -123,7 +123,7 @@ const RiderNotificationsPage = () => {
         prev.map(p => (p.id === notificationId ? { ...p, read: true } : p))
       );
     } catch (_e) {
-      console.error(_e);
+      // console.error(_e);
       setLocalNotifications(prev =>
         prev.map(p => (p.id === notificationId ? { ...p, read: true } : p))
       );
@@ -297,7 +297,7 @@ const RiderNotificationsPage = () => {
                           setLocalNotifications([]);
                           toast.success('All notifications have been cleared.');
                         } catch (_e) {
-                          console.error(_e);
+                          // console.error(_e);
                           toast.error('Failed to clear notifications');
                         } finally {
                           setIsLoading(false);
@@ -393,10 +393,10 @@ const RiderNotificationsPage = () => {
                                       : undefined,
                                 });
                               } catch (_error) {
-                                console.error(
-                                  'Error formatting notification date:',
-                                  _error
-                                );
+                                // console.error(
+                                //   'Error formatting notification date:',
+                                //   _error
+                                // );
                                 return 'Recently';
                               }
                             })()}

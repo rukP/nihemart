@@ -156,7 +156,7 @@ const AdminSettings: FC = () => {
             });
           }
         } catch (_err) {
-          console.error('Failed to load profile:', _err);
+          // console.error('Failed to load profile:', _err);
           const fullName = user.fullName || user.email || '';
           const nameParts = fullName.split(' ');
           profileForm.reset({
@@ -171,7 +171,7 @@ const AdminSettings: FC = () => {
         }
         setProfileLoading(false);
       } catch (_err) {
-        console.error('Error loading profile:', _err);
+        // console.error('Error loading profile:', _err);
         setProfileLoading(false);
       }
     };
@@ -190,7 +190,7 @@ const AdminSettings: FC = () => {
           completedOrders: statsData.completedOrders,
         });
       } catch (_error) {
-        console.error('Error loading stats:', _error);
+        // console.error('Error loading stats:', _error);
         // Fallback to empty stats on _error
         setStats({
           totalUsers: 0,
@@ -216,7 +216,7 @@ const AdminSettings: FC = () => {
           } catch (_e) {}
         }
       } catch (_error) {
-        console.error('Error loading order settings:', _error);
+        // console.error('Error loading order settings:', _error);
       }
     };
 
@@ -229,7 +229,7 @@ const AdminSettings: FC = () => {
           announcementForm.setValue('announcement', data.announcement || '');
         }
       } catch (_error) {
-        console.error('Error loading announcement:', _error);
+        // console.error('Error loading announcement:', _error);
       }
     };
 
@@ -269,7 +269,7 @@ const AdminSettings: FC = () => {
       await settingsAPI.setOrdersEnabled(data.ordersEnabled);
       toast.success('Order settings updated successfully');
     } catch (error: any) {
-      console.error('Error updating order settings:', error);
+      // console.error('Error updating order settings:', error);
       toast.error(
         error?.response?.data?.message ||
           error.message ||
@@ -299,7 +299,7 @@ const AdminSettings: FC = () => {
 
       toast.success('Announcement updated successfully');
     } catch (error: any) {
-      console.error('Error updating announcement:', error);
+      // console.error('Error updating announcement:', error);
       toast.error(error?.message || 'Failed to update announcement');
     }
   };

@@ -35,7 +35,7 @@ const Collection: FC<CollectionProps> = ({}) => {
         const data = await fetchCategoriesLight();
         setCategories(data);
       } catch (_error) {
-        console.error('Failed to fetch categories:', _error);
+        // console.error('Failed to fetch categories:', _error);
       } finally {
         setLoading(false);
       }

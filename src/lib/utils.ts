@@ -161,10 +161,10 @@ export function optimizeImageUrl(
   // For Supabase URLs, return placeholder since we now use file-based uploads
   // Old Supabase URLs in database should be migrated to local uploads
   if (url.includes('supabase')) {
-    console.warn(
-      'Supabase URL detected but system now uses file-based uploads:',
-      url
-    );
+    // console.warn(
+    //   'Supabase URL detected but system now uses file-based uploads:',
+    //   url
+    // );
     return '/placeholder.svg';
   }
 

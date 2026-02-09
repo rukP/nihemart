@@ -111,7 +111,7 @@ export default function EditRiderDialog({
       onSaved();
       onClose();
     } catch (e: any) {
-      console.error(e);
+      // console.error(e);
       toast.error(e?.message || String(e));
     } finally {
       setIsSaving(false);

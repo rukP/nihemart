@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         await initialize();
       } catch (_e) {
-        console.warn('Auth initialization failed:', _e);
+        // console.warn('Auth initialization failed:', _e);
       }
     };
 
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Reschedule after successful refresh (will be triggered by store update)
         lastAccessToken = null; // Reset to allow rescheduling
       } catch (_error) {
-        console.error('Token refresh failed:', _error);
+        // console.error('Token refresh failed:', _error);
         clearAuth();
       }
     };

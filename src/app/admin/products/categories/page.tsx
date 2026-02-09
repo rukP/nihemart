@@ -48,7 +48,7 @@ export default function CategoriesPage() {
         : (result as any)?.data || result || [];
       setCategories(categories);
     } catch (_error) {
-      console.error('Failed to fetch categories:', _error);
+      // console.error('Failed to fetch categories:', _error);
       setCategories([]);
     } finally {
       setLoading(false);
@@ -57,15 +57,15 @@ export default function CategoriesPage() {
 
   const loadCategorySubcategories = useCallback(async (categoryId: string) => {
     try {
-      console.log(
-        '[CategoriesPage] Loading subcategories for category:',
-        categoryId
-      );
+      // console.log(
+      //   '[CategoriesPage] Loading subcategories for category:',
+      //   categoryId
+      // );
       const result = await fetchSubcategories({ category_id: categoryId });
-      console.log('[CategoriesPage] Fetched subcategories:', result);
+      // console.log('[CategoriesPage] Fetched subcategories:', result);
       setCategorySubcategories(result.data || []);
     } catch (_error) {
-      console.error('Failed to fetch category subcategories:', _error);
+      // console.error('Failed to fetch category subcategories:', _error);
       setCategorySubcategories([]);
     }
   }, []);
@@ -109,7 +109,7 @@ export default function CategoriesPage() {
         await deleteCategory(id);
         loadCategories();
       } catch (_error) {
-        console.error('Failed to delete category:', _error);
+        // console.error('Failed to delete category:', _error);
       }
     }
   };
@@ -143,7 +143,7 @@ export default function CategoriesPage() {
           await loadCategorySubcategories(viewingCategory.id);
         }
       } catch (_error) {
-        console.error('Failed to delete subcategory:', _error);
+        // console.error('Failed to delete subcategory:', _error);
       }
     }
   };

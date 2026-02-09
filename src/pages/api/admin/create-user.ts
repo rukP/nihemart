@@ -51,7 +51,7 @@ export default async function handler(
     const userData = await response.json();
     res.status(200).json({ user: userData });
   } catch (error: any) {
-    console.error('Error creating user:', error);
+    // console.error('Error creating user:', error);
     res.status(500).json({
       error: 'Failed to create user',
       details:

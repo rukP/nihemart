@@ -54,7 +54,7 @@ export default async function handler(
     const result = await response.json();
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error listing users:', error);
+    // console.error('Error listing users:', error);
     res.status(500).json({
       error: 'Failed to list users',
       details:

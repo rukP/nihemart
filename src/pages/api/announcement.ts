@@ -57,7 +57,7 @@ export default async function handler(
     res.setHeader('Allow', ['GET', 'POST']);
     res.status(405).end(`Method ${req.method} Not Allowed`);
   } catch (err: any) {
-    console.error('/api/announcement error:', err);
+    // console.error('/api/announcement error:', err);
     const message = err?.message || 'Failed to process announcement request';
     return res.status(500).json({ error: message });
   }

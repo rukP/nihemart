@@ -104,17 +104,17 @@ export default function AddOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Regular Order - Submit handler called');
+    // console.log('Regular Order - Submit handler called');
 
     if (isSubmitting) {
-      console.log('Already submitting, returning');
+      // console.log('Already submitting, returning');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      console.log('Starting validation...');
+      // console.log('Starting validation...');
 
       const normalizedItems = orderItems.map((item, idx) => {
         const sel = selectedProducts[idx];
@@ -156,7 +156,7 @@ export default function AddOrderPage() {
         );
 
       if (invalidItems.length > 0) {
-        console.log('Invalid order items found:', invalidItems);
+        // console.log('Invalid order items found:', invalidItems);
         const firstIdx = invalidItems[0].idx + 1;
         toast.error(
           `Please properly select product and specify quantity/price for item #${firstIdx}`
@@ -171,7 +171,7 @@ export default function AddOrderPage() {
         return;
       }
 
-      const orderData = {
+      const _orderData = {
         order: {
           ...formData,
           user_id: user.id,
@@ -188,15 +188,15 @@ export default function AddOrderPage() {
         })),
       };
 
-      console.log('Submitting order with data:', orderData);
+      // console.log('Submitting order with data:', orderData);
 
-      const result = await createOrder.mutateAsync(orderData);
-      console.log('Order created successfully:', result);
+      const _result = await createOrder.mutateAsync(_orderData);
+      // console.log('Order created successfully:', result);
 
       toast.success('Order created successfully');
       router.push('/admin/orders');
     } catch (error: any) {
-      console.error('Error creating order:', error);
+      // console.error('Error creating order:', error);
       toast.error(error.message || 'Failed to create order');
     } finally {
       setIsSubmitting(false);

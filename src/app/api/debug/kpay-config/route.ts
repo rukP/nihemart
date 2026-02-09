@@ -111,7 +111,7 @@ export async function GET(_request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in KPay config diagnostic:', error);
+    // console.error('Error in KPay config diagnostic:', error);
     return NextResponse.json(
       {
         status: 'error',

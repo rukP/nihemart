@@ -185,7 +185,7 @@ const Page = () => {
       else if (status === 'completed')
         toast.success('Order marked as delivered!');
     } catch (err: any) {
-      console.error(err);
+      // console.error(err);
       const msg =
         (err && err.error && (err.error.message || err.error)) ||
         err?.message ||
@@ -205,8 +205,8 @@ const Page = () => {
       if (typeof order === 'string') {
         try {
           order = JSON.parse(order);
-        } catch (e) {
-          console.log('Failed to parse order JSON string:', e);
+        } catch (_e) {
+          // console.log('Failed to parse order JSON string:', e);
         }
       }
       if (Array.isArray(order)) order = order[0] || null;
@@ -481,8 +481,8 @@ const Page = () => {
                               ...p,
                               [orderId]: o,
                             }));
-                        } catch (e) {
-                          console.error('Failed to fetch order details:', e);
+                        } catch (_e) {
+                          // console.error('Failed to fetch order details:', e);
                         }
                       }
                       if (o) setViewOrder(o);
@@ -545,8 +545,8 @@ const Page = () => {
           });
           return next;
         });
-      } catch (err) {
-        console.error('Failed to fetch assignment orders:', err);
+      } catch (_err) {
+        // console.error('Failed to fetch assignment orders:', err);
       }
     })();
 
@@ -987,11 +987,11 @@ const Page = () => {
                                               ...p,
                                               [orderId]: o,
                                             }));
-                                        } catch (e) {
-                                          console.error(
-                                            'Failed to fetch order details:',
-                                            e
-                                          );
+                                        } catch (_e) {
+                                          // console.error(
+                                          //   'Failed to fetch order details:',
+                                          //   e
+                                          // );
                                         }
                                       }
                                       if (o) setViewOrder(o);
@@ -1225,8 +1225,8 @@ const Page = () => {
                   await markTransportOnly.mutateAsync(transportOrderId);
                   toast.success('Order marked as transport only');
                   if (refetchAssignments) refetchAssignments();
-                } catch (err) {
-                  console.error('Transport only failed:', err);
+                } catch (_err) {
+                  // console.error('Transport only failed:', err);
                   toast.error('Failed to mark transport only');
                 } finally {
                   setIsTransporting(false);

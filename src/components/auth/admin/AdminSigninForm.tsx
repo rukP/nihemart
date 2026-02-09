@@ -67,9 +67,9 @@ const AdminSigninForm: FC<AdminSigninFormProps> = ({ redirect }) => {
       if (redirectParam) {
         try {
           localStorage.setItem('oauth_redirect', redirectParam);
-          console.log('Stored redirect in localStorage:', redirectParam);
+          // console.log('Stored redirect in localStorage:', redirectParam);
         } catch (_e) {
-          console.warn('Could not store redirect in localStorage:', _e);
+          // console.warn('Could not store redirect in localStorage:', _e);
         }
       } else {
         // Clear any stale redirect
@@ -81,14 +81,14 @@ const AdminSigninForm: FC<AdminSigninFormProps> = ({ redirect }) => {
       }
 
       // Build callback URL
-      const callbackUrl = `${origin}/auth/callback`;
+      const _callbackUrl = `${origin}/auth/callback`;
       const state: string | undefined = redirectParam
         ? encodeURIComponent(redirectParam)
         : undefined;
 
-      console.log('Starting Google OAuth...');
-      console.log('- Redirect param:', redirectParam);
-      console.log('- Callback URL:', callbackUrl);
+      // console.log('Starting Google OAuth...');
+      // console.log('- Redirect param:', redirectParam);
+      // console.log('- Callback URL:', callbackUrl);
 
       // Inform the user that we're redirecting them to Google
       try {
@@ -103,7 +103,7 @@ const AdminSigninForm: FC<AdminSigninFormProps> = ({ redirect }) => {
       // Redirect to Google OAuth
       window.location.href = url;
     } catch (err: any) {
-      console.error('Google sign-in failed:', err);
+      // console.error('Google sign-in failed:', err);
       toast.error(err?.message || t('auth.google.failed'));
 
       // Clear stored redirect on error

@@ -53,7 +53,7 @@ export default async function handler(
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (err: any) {
-    console.error('notifications handler error', err);
+    // console.error('notifications handler error', err);
     return res.status(500).json({ error: err.message || err });
   }
 }

@@ -81,7 +81,7 @@ const NotificationsBell: React.FC = () => {
       // Non-admin (customer) behavior: always go to notifications page so they can see rider contact and details
       router.push(`/notifications`);
     } catch (_e) {
-      console.error('Error handling notification click:', _e);
+      // console.error('Error handling notification click:', _e);
       router.push(`/notifications`);
     }
   };
@@ -133,7 +133,7 @@ const NotificationsBell: React.FC = () => {
         });
       }
     } catch (_error) {
-      console.error('Error formatting time:', _error);
+      // console.error('Error formatting time:', _error);
       return 'Recently';
     }
   };

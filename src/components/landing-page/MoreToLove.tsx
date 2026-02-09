@@ -227,7 +227,7 @@ const MoreToLove: FC<MoreToLoveProps> = ({}) => {
         setMoreToLove(slice);
         setOffset(initialLimit);
       } catch (_error) {
-        console.error('Failed to load landing page data', _error);
+        // console.error('Failed to load landing page data', _error);
       } finally {
         setLoading(false);
       }
@@ -252,7 +252,7 @@ const MoreToLove: FC<MoreToLoveProps> = ({}) => {
       setMoreToLove(prev => [...prev, ...newSlice]);
       setOffset(prev => prev + loadMoreLimit);
     } catch (_error) {
-      console.error('Failed to fetch more products', _error);
+      // console.error('Failed to fetch more products', _error);
     } finally {
       setLoadingMore(false);
     }

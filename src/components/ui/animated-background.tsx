@@ -33,7 +33,7 @@ export function AnimatedBackground({
   const uniqueId = useId();
 
   const handleSetActiveId = (id: string | null) => {
-    console.log('AnimatedBackground click:', id);
+    // console.log('AnimatedBackground click:', id);
     setActiveId(id);
 
     if (onValueChange) {

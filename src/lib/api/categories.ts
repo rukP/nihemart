@@ -110,19 +110,19 @@ export async function fetchSubcategories(options?: {
   try {
     // FIXED: Use /categories/with-subcategories which works reliably (as confirmed by user)
     // This endpoint returns { categories: [...], subcategories: [...] }
-    console.log(
-      '[fetchSubcategories] Fetching from /categories/with-subcategories'
-    );
+    // console.log(
+    //   '[fetchSubcategories] Fetching from /categories/with-subcategories'
+    // );
 
     const response = await handleApiRequest(() =>
       unauthorizedAPI.get('/categories/with-subcategories')
     );
-    console.log('[fetchSubcategories] Response structure:', {
-      hasCategories: !!response.categories,
-      hasSubcategories: !!response.subcategories,
-      categoriesCount: response.categories?.length,
-      subcategoriesCount: response.subcategories?.length,
-    });
+    // console.log('[fetchSubcategories] Response structure:', {
+    //   hasCategories: !!response.categories,
+    //   hasSubcategories: !!response.subcategories,
+    //   categoriesCount: response.categories?.length,
+    //   subcategoriesCount: response.subcategories?.length,
+    // });
 
     // FIXED: Extract subcategories from the response
     // Response format: { categories: [...], subcategories: [...] }
@@ -149,9 +149,9 @@ export async function fetchSubcategories(options?: {
           sub.category_id === options.category_id ||
           (sub.category && sub.category.id === options.category_id)
       );
-      console.log(
-        `[fetchSubcategories] Filtered to ${filteredSubcategories.length} subcategories for category ${options.category_id}`
-      );
+      // console.log(
+      //   `[fetchSubcategories] Filtered to ${filteredSubcategories.length} subcategories for category ${options.category_id}`
+      // );
     }
 
     // FIXED: Transform backend response to match Subcategory interface
@@ -167,14 +167,14 @@ export async function fetchSubcategories(options?: {
       updated_at: sub.updated_at || sub.updatedAt,
     }));
 
-    console.log(
-      '[fetchSubcategories] Final result:',
-      transformedSubcategories.length,
-      'subcategories'
-    );
+    // console.log(
+    //   '[fetchSubcategories] Final result:',
+    //   transformedSubcategories.length,
+    //   'subcategories'
+    // );
     return { data: transformedSubcategories };
-  } catch (error: any) {
-    console.error('[fetchSubcategories] Error fetching subcategories:', error);
+  } catch (_error: any) {
+    // console.error('[fetchSubcategories] Error fetching subcategories:', error);
 
     // Return empty array on any error
     return { data: [] };
@@ -213,7 +213,7 @@ export async function fetchCategories(options?: {
     // Fallback: try public endpoint
     return getCategories();
   } catch (_error) {
-    console.error('Error fetching categories:', _error);
+    // console.error('Error fetching categories:', _error);
     // Fallback to public endpoint if admin endpoint fails
     return getCategories();
   }

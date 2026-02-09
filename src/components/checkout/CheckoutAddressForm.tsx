@@ -233,7 +233,7 @@ export default function CheckoutAddressForm(props: Props) {
       setHouseNumber('');
       setPhoneInput('');
     } catch (_err) {
-      console.error(_err);
+      // console.error(_err);
       toast.error(t('checkout.saveFailed'));
     } finally {
       setIsSavingAddress(false);

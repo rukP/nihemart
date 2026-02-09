@@ -22,7 +22,7 @@ export async function sendAuthEmail(
   const smtpPass = process.env.SMTPPASS;
 
   if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-    console.warn('SMTP env vars missing; cannot send email');
+    // console.warn('SMTP env vars missing; cannot send email');
     return { ok: false, warning: 'SMTP not configured' };
   }
 
@@ -67,7 +67,7 @@ export async function sendEmail(
   const smtpPass = process.env.SMTPPASS;
 
   if (!smtpHost || !smtpPort || !smtpUser || !smtpPass) {
-    console.warn('SMTP env vars missing; cannot send email');
+    // console.warn('SMTP env vars missing; cannot send email');
     return { ok: false, warning: 'SMTP not configured' } as const;
   }
 

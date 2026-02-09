@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         }
       } catch (_error) {
         // Skip products that fail
-        console.warn(`Failed to fetch reviews for product ${product.id}`);
+        // console.warn(`Failed to fetch reviews for product ${product.id}`);
       }
     }
 
@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
       limit,
     });
   } catch (error: any) {
-    console.error('Error fetching reviews:', error);
+    // console.error('Error fetching reviews:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch reviews' },
       { status: 500 }

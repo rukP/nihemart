@@ -43,7 +43,7 @@ export default async function handler(
       .status(200)
       .json({ assignments: Array.isArray(data) ? data : [] });
   } catch (err: any) {
-    console.error('assignments handler failed', err);
+    // console.error('assignments handler failed', err);
     return res.status(500).json({ error: err?.message || 'Failed' });
   }
 }

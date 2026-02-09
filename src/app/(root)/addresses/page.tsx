@@ -175,7 +175,7 @@ const AddressesPage = () => {
       setDistricts(extract(districtsJson, '2_districts'));
       setSectors(extract(sectorsJson, '3_sectors'));
     } catch (_err) {
-      console.error('Failed to load location data:', _err);
+      // console.error('Failed to load location data:', _err);
     }
   }, []);
 
@@ -328,7 +328,7 @@ const AddressesPage = () => {
       refresh?.();
     } catch (_err) {
       toast.error('Save failed');
-      console.error(_err);
+      // console.error(_err);
     } finally {
       setIsSaving(false);
     }

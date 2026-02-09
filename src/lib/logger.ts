@@ -65,11 +65,11 @@ class Logger {
       ...context,
     };
 
-    const logString = this.formatLog(entry);
+    const _logString = this.formatLog(entry);
 
     // Always log errors and warnings
     if (level === 'error') {
-      console.error(logString);
+      // console.error(logString);
 
       // In production, you might want to send critical errors to an external service
       if (!this.isDevelopment) {
@@ -77,10 +77,10 @@ class Logger {
         // this.sendToExternalService(entry);
       }
     } else if (level === 'warn') {
-      console.warn(logString);
+      // console.warn(logString);
     } else if (this.isDevelopment || level === 'info') {
       // In development, log everything. In production, only log info and above
-      console.log(logString);
+      // console.log(logString);
     }
   }
 

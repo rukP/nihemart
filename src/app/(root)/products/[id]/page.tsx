@@ -110,9 +110,9 @@ export async function generateStaticParams() {
   try {
     // Only attempt to fetch product IDs if we have the API base URL
     if (!process.env.NEXT_PUBLIC_API_BASE) {
-      console.warn(
-        'API base URL not available during build, skipping static param generation'
-      );
+      // console.warn(
+      //   'API base URL not available during build, skipping static param generation'
+      // );
       return [];
     }
 
@@ -121,7 +121,7 @@ export async function generateStaticParams() {
       id: id,
     }));
   } catch (_error) {
-    console.error('Failed to generate static params for products:', _error);
+    // console.error('Failed to generate static params for products:', _error);
     // Return empty array to prevent build failure, but page will still work with dynamic rendering
     return [];
   }
@@ -151,7 +151,7 @@ export default async function ProductPage({ params }: any) {
     }
 
     if (!productData.product) {
-      console.error('Product data is missing or invalid:', productData);
+      // console.error('Product data is missing or invalid:', productData);
       notFound();
     }
 
@@ -171,9 +171,9 @@ export default async function ProductPage({ params }: any) {
     };
 
     return <ProductClientPage initialData={pageData} />;
-  } catch (error: any) {
-    console.error('Failed to fetch product data:', error);
-    console.error('Error details:', error?.response?.data || error?.message);
+  } catch (_error: any) {
+    // console.error('Failed to fetch product data:', error);
+    // console.error('Error details:', error?.response?.data || error?.message);
     // If we can't fetch the product, show not found
     notFound();
   }

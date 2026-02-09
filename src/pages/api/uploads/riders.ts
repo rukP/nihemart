@@ -50,13 +50,13 @@ export default async function handler(
     }
 
     if (!authToken) {
-      console.error('No auth token found in headers or cookies');
+      // console.error('No auth token found in headers or cookies');
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    console.log(
-      `Auth token extracted: ${authToken.substring(0, 20)}... (length: ${authToken.length})`
-    );
+    // console.log(
+    //   `Auth token extracted: ${authToken.substring(0, 20)}... (length: ${authToken.length})`
+    // );
 
     // Collect the request body with timeout
     const bodyBuffer = await Promise.race([
@@ -89,19 +89,19 @@ export default async function handler(
     // Set Authorization header explicitly (must be Bearer token format)
     headers['Authorization'] = `Bearer ${authToken}`;
 
-    console.log(
-      `Auth token present: ${!!authToken}, length: ${authToken?.length || 0}`
-    );
+    // console.log(
+    //   `Auth token present: ${!!authToken}, length: ${authToken?.length || 0}`
+    // );
 
     // Set content-length if we have the body
     if (bodyBuffer.length > 0) {
       headers['Content-Length'] = bodyBuffer.length.toString();
     }
 
-    console.log(
-      `Forwarding upload to backend: ${backendUrl}/api/uploads/riders`
-    );
-    console.log(`Body size: ${bodyBuffer.length} bytes`);
+    // console.log(
+    //   `Forwarding upload to backend: ${backendUrl}/api/uploads/riders`
+    // );
+    // console.log(`Body size: ${bodyBuffer.length} bytes`);
 
     // Forward to backend with timeout
     const controller = new AbortController();
@@ -128,7 +128,7 @@ export default async function handler(
         } catch {
           errorData = { error: errorText };
         }
-        console.error('Backend upload error:', errorData);
+        // console.error('Backend upload error:', errorData);
         return res.status(backendResponse.status).json(errorData);
       }
 
@@ -145,7 +145,7 @@ export default async function handler(
       throw fetchError;
     }
   } catch (err: any) {
-    console.error('upload-rider-image proxy error:', err);
+    // console.error('upload-rider-image proxy error:', err);
     return res.status(500).json({ error: err?.message || 'Upload failed' });
   }
 }

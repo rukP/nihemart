@@ -13,7 +13,7 @@ export const useLogout = () => {
       router.push('/');
     } catch (_error) {
       toast.error('Error logging out');
-      console.error('Logout error:', _error);
+      // console.error('Logout error:', _error);
     }
   };
 

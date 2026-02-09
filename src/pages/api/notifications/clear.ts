@@ -47,7 +47,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json(result);
   } catch (err: any) {
-    console.error('notifications clear error', err);
+    // console.error('notifications clear error', err);
     return res.status(500).json({ error: err.message || err });
   }
 }

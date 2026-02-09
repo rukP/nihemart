@@ -211,7 +211,7 @@ export default function AddEditDiscountDialog({
       }
       onSuccess();
     } catch (error: any) {
-      console.error('Failed to save discount:', error);
+      // console.error('Failed to save discount:', error);
       toast.error(error.message || 'Failed to save discount');
     }
   };

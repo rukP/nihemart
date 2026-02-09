@@ -46,7 +46,7 @@ export default async function handler(
 
     return res.status(200).json({ ok: true });
   } catch (err: any) {
-    console.error('upsert-profile error:', err);
+    // console.error('upsert-profile error:', err);
     return res.status(500).json({ error: err?.message || String(err) });
   }
 }

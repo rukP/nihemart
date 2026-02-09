@@ -64,7 +64,7 @@ export default function AssignOrderToRiderDialog({
       onOpenChange(false);
       onAssigned?.();
     } catch (err: any) {
-      console.error(err);
+      // console.error(err);
       const msg =
         (err && err.error && (err.error.message || err.error)) ||
         err?.message ||

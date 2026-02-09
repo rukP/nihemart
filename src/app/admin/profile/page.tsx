@@ -55,10 +55,10 @@ const ProfileSetting: FC<ProfileSettingProps> = ({}) => {
     },
   });
 
-  const onSubmit = async (data: TProfileSchema) => {
+  const onSubmit = async (_data: TProfileSchema) => {
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
-    console.log('Profile Updated:', data);
+    // console.log('Profile Updated:', data);
   };
 
   const handleDiscard = () => {

@@ -32,19 +32,19 @@ const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  console.error(
-    'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.'
-  );
-  console.error('Environment files checked:', envFiles.join(', '));
-  console.error('Loaded .env path:', loaded || 'none');
-  console.error('SUPABASE_URL present:', !!SUPABASE_URL);
-  console.error(
-    'SUPABASE_SERVICE_ROLE_KEY present:',
-    !!SUPABASE_SERVICE_ROLE_KEY
-  );
-  console.error(
-    'If you store secrets in .env.local, ensure you run this script from the project root so the file can be read.'
-  );
+  // console.error(
+  //   'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.'
+  // );
+  // console.error('Environment files checked:', envFiles.join(', '));
+  // console.error('Loaded .env path:', loaded || 'none');
+  // console.error('SUPABASE_URL present:', !!SUPABASE_URL);
+  // console.error(
+  //   'SUPABASE_SERVICE_ROLE_KEY present:',
+  //   !!SUPABASE_SERVICE_ROLE_KEY
+  // );
+  // console.error(
+  //   'If you store secrets in .env.local, ensure you run this script from the project root so the file can be read.'
+  // );
   process.exit(1);
 }
 
@@ -62,17 +62,17 @@ const ADMIN_CITY = process.env.SEED_ADMIN_CITY || 'N/A';
 
 async function run() {
   try {
-    console.log('Looking for existing user with email:', ADMIN_EMAIL);
+    // console.log('Looking for existing user with email:', ADMIN_EMAIL);
 
     // Try to find existing user via admin API
     const { data: existingUserData, error: listErr } =
       await supabase.auth.admin.listUsers();
     if (listErr) {
       // The admin.listUsers() may not be supported in all SDK versions; fallback to using SQL if needed
-      console.warn(
-        'listUsers error (SDK may not support listing):',
-        listErr.message || listErr
-      );
+      // console.warn(
+      //   'listUsers error (SDK may not support listing):',
+      //   listErr.message || listErr
+      // );
     }
 
     let existingUser = null;
@@ -83,7 +83,7 @@ async function run() {
 
     if (!existingUser) {
       // Create user
-      console.log('Creating user via admin API...');
+      // console.log('Creating user via admin API...');
       const { data, error } = await supabase.auth.admin.createUser({
         email: ADMIN_EMAIL,
         password: ADMIN_PASSWORD,
@@ -96,30 +96,29 @@ async function run() {
         },
       });
 
-      if (error) {
-        console.error('Error creating user:', error.message || error);
+      if (_error) {
+        // console.error('Error creating user:', error.message || error);
         process.exit(1);
       }
 
       existingUser = data.user || null;
-      console.log('Created user id=', existingUser?.id);
+      // console.log('Created user id=', existingUser?.id);
     } else {
-      console.log('User already exists, id=', existingUser.id);
+      // console.log('User already exists, id=', existingUser.id);
 
       // Ensure password is set/updated using admin API
       try {
-        console.log('Updating password for existing user...');
+        // console.log('Updating password for existing user...');
         const { data: upd, error: updErr } =
           await supabase.auth.admin.updateUserById(existingUser.id, {
             password: ADMIN_PASSWORD,
           });
-        if (updErr)
-          console.warn(
-            'Warning: updateUserById password error:',
-            updErr.message || updErr
-          );
-      } catch (e) {
-        console.warn('updateUserById thrown:', e?.message || e);
+        // console.warn(
+        //   'Warning: updateUserById password error:',
+        //   updErr.message || updErr
+        // );
+      } catch (_e) {
+        // console.warn('updateUserById thrown:', e?.message || e);
       }
 
       // Update user_metadata
@@ -133,20 +132,20 @@ async function run() {
               city: ADMIN_CITY,
             },
           });
-        if (upd2Err)
-          console.warn(
-            'Warning: updateUserById metadata error:',
-            upd2Err.message || upd2Err
-          );
+        // if (upd2Err)
+        //   console.warn(
+        //     'Warning: updateUserById metadata error:',
+        //     upd2Err.message || upd2Err
+        //   );
       } catch (e) {
-        console.warn('updateUserById thrown:', e?.message || e);
+        // console.warn('updateUserById thrown:', e?.message || e);
       }
     }
 
     const userId = existingUser.id;
 
     // Upsert profile row in public.profiles
-    console.log('Upserting public.profiles for user id:', userId);
+    // console.log('Upserting public.profiles for user id:', userId);
     const { error: upsertProfileErr } = await supabase
       .from('profiles')
       .upsert(
@@ -162,15 +161,15 @@ async function run() {
       .select();
 
     if (upsertProfileErr) {
-      console.error(
-        'Error upserting profile:',
-        upsertProfileErr.message || upsertProfileErr
-      );
+      // console.error(
+      //   'Error upserting profile:',
+      //   upsertProfileErr.message || upsertProfileErr
+      // );
       process.exit(1);
     }
 
     // Upsert admin role in public.user_roles
-    console.log('Upserting admin role in public.user_roles');
+    // console.log('Upserting admin role in public.user_roles');
     const { error: upsertRoleErr } = await supabase
       .from('user_roles')
       .upsert(
@@ -178,17 +177,17 @@ async function run() {
         { onConflict: 'user_id,role' }
       );
     if (upsertRoleErr) {
-      console.error(
-        'Error upserting user_roles:',
-        upsertRoleErr.message || upsertRoleErr
-      );
+      // console.error(
+      //   'Error upserting user_roles:',
+      //   upsertRoleErr.message || upsertRoleErr
+      // );
       process.exit(1);
     }
 
-    console.log('✅ Admin seeded successfully:', ADMIN_EMAIL);
-    console.log('You can now sign in with that email and password.');
+    // console.log('✅ Admin seeded successfully:', ADMIN_EMAIL);
+    // console.log('You can now sign in with that email and password.');
   } catch (err) {
-    console.error('Unexpected error:', err?.message || err);
+    // console.error('Unexpected error:', err?.message || err);
     process.exit(1);
   }
 }

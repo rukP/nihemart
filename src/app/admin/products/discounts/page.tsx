@@ -106,7 +106,7 @@ export default function DiscountsPage() {
       queryClient.invalidateQueries({ queryKey: ['discounts'] });
       loadDiscounts();
     } catch (error: any) {
-      console.error('Failed to delete discount:', error);
+      // console.error('Failed to delete discount:', error);
       toast.error(error.message || 'Failed to delete discount');
     } finally {
       setDeletingDiscountId(null);

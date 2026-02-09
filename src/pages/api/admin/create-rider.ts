@@ -36,7 +36,7 @@ export default async function handler(
 
     return res.status(200).json({ rider });
   } catch (err: any) {
-    console.error('create-rider failed', err);
+    // console.error('create-rider failed', err);
     return res
       .status(500)
       .json({ error: err.message || 'Failed to create rider' });

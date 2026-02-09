@@ -26,12 +26,12 @@ const getApiBase = () => {
     baseUrl === '' ||
     (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://'))
   ) {
-    console.warn(
-      'Invalid API base URL for Socket.IO:',
-      baseUrl,
-      'using default'
-    );
-    baseUrl = 'http://localhost:4000';
+    // console.warn(
+    //   'Invalid API base URL for Socket.IO:',
+    //   baseUrl,
+    //   'using default'
+    // );
+    baseUrl = 'https://api.nihemart.rw';
   }
 
   // In production, ensure we use HTTPS
@@ -49,8 +49,8 @@ const getApiBase = () => {
   try {
     new URL(baseUrl);
   } catch (_e) {
-    console.error('Invalid Socket.IO URL format:', baseUrl, _e);
-    return 'http://localhost:4000';
+    // console.error('Invalid Socket.IO URL format:', baseUrl, _e);
+    return 'https://api.nihemart.rw';
   }
 
   return baseUrl;
@@ -70,14 +70,14 @@ export function initializeSocket(): Socket | null {
 
   // Don't retry if initialization permanently failed
   if (initializationFailed) {
-    console.warn('Socket.IO initialization previously failed, skipping retry');
+    // console.warn('Socket.IO initialization previously failed, skipping retry');
     return null;
   }
 
   // Get auth token
   const token = useAuthStore.getState().token;
   if (!token) {
-    console.warn('No auth token available for Socket.IO connection');
+    // console.warn('No auth token available for Socket.IO connection');
     // Disconnect if we had a socket but no token
     if (socket) {
       socket.disconnect();
@@ -107,13 +107,13 @@ export function initializeSocket(): Socket | null {
     apiBase === '' ||
     (!apiBase.startsWith('http://') && !apiBase.startsWith('https://'))
   ) {
-    console.error('Invalid Socket.IO URL:', apiBase);
+    // console.error('Invalid Socket.IO URL:', apiBase);
     return null;
   }
 
   const socketUrl = apiBase; // Already cleaned in getApiBase()
 
-  console.log('Connecting Socket.IO to:', socketUrl);
+  // console.log('Connecting Socket.IO to:', socketUrl);
 
   // Disconnect existing socket if any
   if (socket) {
@@ -140,7 +140,7 @@ export function initializeSocket(): Socket | null {
   });
 
   socket.on('connect', () => {
-    console.log('Socket.IO connected:', socket?.id);
+    // console.log('Socket.IO connected:', socket?.id);
     reconnectAttempts = 0;
     initializationFailed = false; // Reset failed flag on successful connection
 
@@ -149,7 +149,7 @@ export function initializeSocket(): Socket | null {
   });
 
   socket.on('disconnect', reason => {
-    console.log('Socket.IO disconnected:', reason);
+    // console.log('Socket.IO disconnected:', reason);
 
     if (reason === 'io server disconnect') {
       // Server disconnected, reconnect manually
@@ -158,19 +158,20 @@ export function initializeSocket(): Socket | null {
   });
 
   socket.on('connect_error', error => {
-    console.error('Socket.IO connection error:', error);
-    console.error('Error details:', {
-      message: error.message,
-      type: (error as any).type,
-      description: (error as any).description,
-      data: (error as any).data,
-    });
+    // console.error('Socket.IO connection error:', error);
+    // console.error('Error details:', {
+    //   message: error.message,
+    //   type: (error as any).type,
+    //   description: (error as any).description,
+    //   data: (error as any).data,
+    // });
+
     reconnectAttempts++;
 
     if (reconnectAttempts >= MAXRECONNECT_ATTEMPTS) {
-      console.error(
-        'Max reconnection attempts reached. Socket.IO connection failed. Will not retry automatically.'
-      );
+      // console.error(
+      //   'Max reconnection attempts reached. Socket.IO connection failed. Will not retry automatically.'
+      // );
       initializationFailed = true;
 
       // Disconnect the socket to stop automatic reconnection attempts
@@ -178,6 +179,7 @@ export function initializeSocket(): Socket | null {
         socket.disconnect();
       }
     }
+    throw error;
   });
 
   return socket;

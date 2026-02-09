@@ -143,29 +143,29 @@ const NewRiderPage = () => {
             // Handle both response formats: { url: ... } or { data: { url: ... } }
             imageUrl = uploadJson.url || uploadJson.data?.url || null;
             if (imageUrl) {
-              console.log('Image uploaded successfully:', imageUrl);
+              // console.log('Image uploaded successfully:', imageUrl);
             } else {
-              console.warn('Image upload response missing URL:', uploadJson);
+              // console.warn('Image upload response missing URL:', uploadJson);
             }
           } else {
             const errorText = await uploadRes.text();
-            let errorJson;
+            let _errorJson;
             try {
-              errorJson = JSON.parse(errorText);
+              _errorJson = JSON.parse(errorText);
             } catch {
-              errorJson = { error: errorText };
+              _errorJson = { error: errorText };
             }
-            console.warn(
-              'Image upload failed, continuing without image:',
-              errorJson.error || errorText
-            );
+            // console.warn(
+            //   'Image upload failed, continuing without image:',
+            //   errorJson.error || errorText
+            // );
             // Continue without image - don't block rider creation
           }
-        } catch (uploadError) {
-          console.warn(
-            'Image upload error, continuing without image:',
-            uploadError
-          );
+        } catch (_uploadError) {
+          // console.warn(
+          //   'Image upload error, continuing without image:',
+          //   uploadError
+          // );
           // Continue without image - don't block rider creation
         }
       }
@@ -182,26 +182,26 @@ const NewRiderPage = () => {
         active: active ?? true,
       };
 
-      console.log('Creating rider with data:', {
-        ...riderData,
-        password: '***',
-      });
+      // console.log('Creating rider with data:', {
+      //   ...riderData,
+      //   password: '***',
+      // });
 
       // Use mutation with proper error handling
       const result = await createRider.mutateAsync(riderData);
 
-      console.log('Rider created successfully:', result);
+      // console.log('Rider created successfully:', result);
 
       // Verify the rider was created with user account
       if (result && result.userId) {
-        console.log(
-          'Rider user account created successfully, userId:',
-          result.userId
-        );
+        // console.log(
+        //   'Rider user account created successfully, userId:',
+        //   result.userId
+        // );
       } else {
-        console.warn(
-          'Rider created but no userId - rider may not be able to login'
-        );
+        // console.warn(
+        //   'Rider created but no userId - rider may not be able to login'
+        // );
       }
 
       setMessage(
@@ -224,7 +224,7 @@ const NewRiderPage = () => {
         router.push('/admin/riders');
       }, 1000);
     } catch (err: any) {
-      console.error('Rider creation error:', err);
+      // console.error('Rider creation error:', err);
 
       // Extract error message from various possible formats
       let errorMessage = 'Failed to create rider';

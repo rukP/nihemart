@@ -58,7 +58,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       setWishlistItems(items);
       setWishlistCount(count);
     } catch (_error) {
-      console.error('Error refreshing wishlist:', _error);
+      // console.error('Error refreshing wishlist:', _error);
       toast.error('Failed to load wishlist');
     } finally {
       setIsLoading(false);
@@ -83,7 +83,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       await refreshWishlist();
       toast.success('Added to wishlist');
     } catch (error: any) {
-      console.error('Error adding to wishlist:', error);
+      // console.error('Error adding to wishlist:', error);
       if (error.code === '23505') {
         // unique constraint violation
         toast.info('Item is already in your wishlist');
@@ -99,7 +99,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       await refreshWishlist();
       toast.success('Removed from wishlist');
     } catch (_error) {
-      console.error('Error removing from wishlist:', _error);
+      // console.error('Error removing from wishlist:', _error);
       toast.error('Failed to remove from wishlist');
     }
   };
@@ -115,7 +115,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       await refreshWishlist();
       toast.success(added ? 'Added to wishlist' : 'Removed from wishlist');
     } catch (_error) {
-      console.error('Error toggling wishlist:', _error);
+      // console.error('Error toggling wishlist:', _error);
       toast.error('Failed to update wishlist');
     }
   };

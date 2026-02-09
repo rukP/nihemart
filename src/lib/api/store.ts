@@ -155,7 +155,7 @@ export async function fetchStoreProductById(
         };
       }
     } catch (_err) {
-      console.warn('store.fetchStoreProductById cache lookup failed', _err);
+      // console.warn('store.fetchStoreProductById cache lookup failed', _err);
     }
   }
 
@@ -326,7 +326,7 @@ export async function searchProductsByName(
     }
   } catch (_err) {
     // If server search fails, fall back to local cached search
-    console.warn('searchProductsByName server search failed', _err);
+    // console.warn('searchProductsByName server search failed', _err);
   }
 
   // Fallback: client-side cached search (only on client)
@@ -347,7 +347,7 @@ export async function searchProductsByName(
           category: p.category || null,
         }));
     } catch (_err) {
-      console.warn('searchProductsByName cache lookup failed', _err);
+      // console.warn('searchProductsByName cache lookup failed', _err);
     }
   }
 
@@ -427,7 +427,7 @@ export async function getLandingPageProducts(): Promise<StoreProduct[]> {
       const all = await fetchAllStoreProductsCached();
       return (all || []).filter((p: any) => p.featured).slice(0, 12);
     } catch (_err) {
-      console.warn('getLandingPageProducts cache lookup failed', _err);
+      // console.warn('getLandingPageProducts cache lookup failed', _err);
     }
   }
 

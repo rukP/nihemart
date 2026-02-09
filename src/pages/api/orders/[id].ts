@@ -41,11 +41,11 @@ export default async function handler(
     const backendData = await backendResponse.json();
 
     if (!backendResponse.ok) {
-      console.error('Backend order fetch failed:', {
-        orderId: id,
-        status: backendResponse.status,
-        error: backendData.message || backendData.error,
-      });
+      // console.error('Backend order fetch failed:', {
+      //   orderId: id,
+      //   status: backendResponse.status,
+      //   error: backendData.message || backendData.error,
+      // });
       return res.status(backendResponse.status).json({
         error:
           backendData.message || backendData.error || 'Failed to fetch order',
@@ -56,7 +56,7 @@ export default async function handler(
     // Backend returns order with items array, which matches what frontend expects
     res.status(200).json(backendData);
   } catch (err: any) {
-    console.error('Order API error:', err);
+    // console.error('Order API error:', err);
     res.status(500).json({ error: err?.message || 'Server error' });
   }
 }

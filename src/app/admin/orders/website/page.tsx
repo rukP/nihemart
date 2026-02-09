@@ -358,7 +358,7 @@ export default function WebsiteOrdersPage() {
               status: newStatus,
             });
           } catch (_error) {
-            console.error('Failed to update order status:', _error);
+            // console.error('Failed to update order status:', _error);
           }
         };
 
@@ -378,7 +378,7 @@ export default function WebsiteOrdersPage() {
             setSelectedOrderDetail(fetched as Order);
             setShowOrderDetails(true);
           } catch (_e) {
-            console.error('Failed to fetch order details:', _e);
+            // console.error('Failed to fetch order details:', _e);
           }
         };
 
@@ -435,7 +435,7 @@ export default function WebsiteOrdersPage() {
                       setSelectedOrder(fetched as Order);
                       setShowManageRefund(true);
                     } catch (_err) {
-                      console.error('Manage refund failed:', _err);
+                      // console.error('Manage refund failed:', _err);
                     }
                   }}
                 >
@@ -454,7 +454,7 @@ export default function WebsiteOrdersPage() {
                         setSelectedOrder(fetched as Order);
                         setShowRefundByAdmin(true);
                       } catch (_err) {
-                        console.error('Refund by admin failed:', _err);
+                        // console.error('Refund by admin failed:', _err);
                       }
                     }}
                   >
@@ -512,7 +512,7 @@ export default function WebsiteOrdersPage() {
                         setSelectedOrder(fetched as Order);
                         setShowLabelDialog(true);
                       } catch (_err) {
-                        console.error('Label order failed:', _err);
+                        // console.error('Label order failed:', _err);
                       }
                     }}
                   >

@@ -145,7 +145,7 @@ const RidersPage = () => {
         setTopRider(null);
       }
     } catch (_err) {
-      console.error('fetchTopRider error', _err);
+      // console.error('fetchTopRider error', _err);
       setTopRider(null);
     }
   };
@@ -180,19 +180,19 @@ const RidersPage = () => {
       );
       setLatestAssignmentsMap((response.data as any)?.assignments || {});
     } catch (_err) {
-      console.error('fetchLatestAssignmentsForPage error', _err);
+      // console.error('fetchLatestAssignmentsForPage error', _err);
     }
   };
 
   const EarningsCell = ({ row }: any) => {
     const riderId = row.original.id;
     const amt = earningsMap[riderId] || 0;
-    console.log(
-      `EarningsCell for rider ${riderId}:`,
-      amt,
-      'earningsMap:',
-      earningsMap
-    );
+    // console.log(
+    //   `EarningsCell for rider ${riderId}:`,
+    //   amt,
+    //   'earningsMap:',
+    //   earningsMap
+    // );
     return (
       <div className="text-sm font-medium">{amt.toLocaleString()} RWF</div>
     );
@@ -394,10 +394,10 @@ const RidersPage = () => {
       try {
         const { riderAPI } = await import('@/hooks/useRiders');
         const earnings = await riderAPI.getRiderEarnings(365);
-        console.log('Earnings data received:', earnings);
+        // console.log('Earnings data received:', earnings);
         setEarningsMap(earnings || {});
       } catch (_e) {
-        console.error('Earnings fetch error:', _e);
+        // console.error('Earnings fetch error:', _e);
       }
     })();
   }, [refetch]);
@@ -816,7 +816,7 @@ function ToggleActiveController({ confirm, setConfirm, qc, refetch }: any) {
       toast.success('Rider updated');
     },
     onError: (err: any) => {
-      console.error(err);
+      // console.error(err);
       toast.error(
         err?.response?.data?.message || err?.message || 'Failed to update rider'
       );
@@ -872,7 +872,7 @@ function DeleteRiderController({ confirm, setConfirm, qc, refetch }: any) {
       toast.success('Rider deleted');
     },
     onError: (err: any) => {
-      console.error(err);
+      // console.error(err);
       toast.error(
         err?.response?.data?.message || err?.message || 'Failed to delete rider'
       );

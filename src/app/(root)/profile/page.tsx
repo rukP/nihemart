@@ -105,8 +105,8 @@ const Profile = () => {
           });
         }
         setProfileLoading(false);
-      } catch (err: any) {
-        console.error('Failed to load profile:', err);
+      } catch (_err: any) {
+        // console.error('Failed to load profile:', err);
         setFormData({
           fullName: user.fullName || user.email || '',
           email: user.email || '',
@@ -136,7 +136,7 @@ const Profile = () => {
           setOrdersDisabledMessage(j.message || null);
         }
       } catch (_err) {
-        console.warn('Failed to fetch orders_enabled for profile page:', _err);
+        // console.warn('Failed to fetch orders_enabled for profile page:', _err);
         // On error, leave null so the scheduler (auto) behavior is used by default
         if (mounted) setOrdersEnabled(null);
       }

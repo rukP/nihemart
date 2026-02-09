@@ -65,14 +65,14 @@ export const RefundsTable: React.FC<RefundsTableProps> = () => {
         dateTo: dateRange.to,
       };
 
-      console.debug('[RefundsTable] fetching refunded items with', payload);
+      // console.debug('[RefundsTable] fetching refunded items with', payload);
       const response = await refundsAPI.getRefundedItems(payload);
-      console.debug('[RefundsTable] refunded items response', response);
+      // console.debug('[RefundsTable] refunded items response', response);
 
       setItems(response.data || []);
       setCount(response.count || 0);
     } catch (err: any) {
-      console.error('Failed to fetch refunded items:', err);
+      // console.error('Failed to fetch refunded items:', err);
       toast.error(
         err?.response?.data?.message || err.message || 'Failed to load refunds'
       );

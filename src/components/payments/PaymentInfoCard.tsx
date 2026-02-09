@@ -71,7 +71,7 @@ export default function PaymentInfoCard({
         setOrderRefundStatus(orderData.refund_status || null);
       }
     } catch (_error) {
-      console.error('Failed to fetch payments:', _error);
+      // console.error('Failed to fetch payments:', _error);
       setPayments([]);
     } finally {
       setLoading(false);
@@ -92,7 +92,7 @@ export default function PaymentInfoCard({
         fetchPayments(false);
       }
     } catch (_error) {
-      console.error('Failed to refresh payment status:', _error);
+      // console.error('Failed to refresh payment status:', _error);
       toast.error('Failed to refresh payment status');
     }
   };

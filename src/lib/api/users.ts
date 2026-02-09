@@ -63,12 +63,12 @@ const userAPI = {
     // Always send sort parameter
     const sortValue = filters.sortBy || 'recent';
     params.append('sort', sortValue);
-    console.log(
-      '[API] Sort parameter:',
-      sortValue,
-      'from filters.sortBy:',
-      filters.sortBy
-    );
+    // console.log(
+    //   '[API] Sort parameter:',
+    //   sortValue,
+    //   'from filters.sortBy:',
+    //   filters.sortBy
+    // );
 
     if (filters.fromDate)
       params.append('from_date', filters.fromDate.toISOString());
@@ -88,10 +88,10 @@ const userAPI = {
     }
 
     const queryString = params.toString();
-    console.log('[API] Fetching users with filters:', {
-      filters,
-      queryString,
-    });
+    // console.log('[API] Fetching users with filters:', {
+    //   filters,
+    //   queryString,
+    // });
     return handleApiRequest(() =>
       authorizedAPI.get(`/users${queryString ? `?${queryString}` : ''}`)
     );

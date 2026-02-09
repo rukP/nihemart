@@ -217,7 +217,7 @@ export default function OrdersMetrics() {
         } catch (_e) {}
       }
     } catch (_err) {
-      console.warn('Failed to load orders_enabled setting', _err);
+      // console.warn('Failed to load orders_enabled setting', _err);
       // Prefer leaving state null so UI treats missing admin setting as schedule-controlled (auto)
       setOrdersEnabled(null);
     }
@@ -255,7 +255,7 @@ export default function OrdersMetrics() {
         setOrdersScheduleDisabled(Boolean(json.scheduleDisabled));
       }
     } catch (_err) {
-      console.error('Failed to toggle orders setting', _err);
+      // console.error('Failed to toggle orders setting', _err);
     } finally {
       setToggling(false);
     }

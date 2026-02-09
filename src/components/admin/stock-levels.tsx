@@ -113,7 +113,7 @@ function StockUpdateDialog({
       onClose();
     } catch (_error) {
       toast.error('Failed to update stock');
-      console.error(_error);
+      // console.error(_error);
     } finally {
       setIsLoading(false);
     }
@@ -352,7 +352,7 @@ function StockTable({
   onHistoryDialog: (variationId: string | null) => void;
   onProductHistoryDialog: (productId: string | null) => void;
 }) {
-  console.log({ products });
+  // console.log({ products });
   const [selectedItems, setSelectedItems] = useState(new Set<string>());
   const [sortConfig, setSortConfig] = useState<{
     key: string;
@@ -395,7 +395,7 @@ function StockTable({
     products.forEach(product => {
       if (product.variations.length > 0) {
         product.variations.forEach(variation => {
-          console.log({ product });
+          // console.log({ product });
           items.push({
             id: `${product.id}-${variation.id}`,
             productId: product.id,

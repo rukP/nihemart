@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (_error) {
-    console.error('Address search failed:', _error);
+    // console.error('Address search failed:', _error);
     return NextResponse.json(
       { _error: 'Failed to fetch addresses' },
       { status: 500 }

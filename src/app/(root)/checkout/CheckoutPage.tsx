@@ -1,72 +1,76 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+// ============================================================================
+// CHECKOUT PAGE COMPONENT (Refactored)
+//
+// Structure:
+// - HOOKS: useCheckoutStorage, useCheckoutLocationData, useOrdersEnabled,
+//   useCheckoutAddressHandlers, useCheckoutPayment, useCheckoutTotals,
+//   useCheckoutFlags, useSubmitOrder
+// - COMPONENTS: AddressSection, DeliveryInstructionsSection, PaymentSection,
+//   OrderItemsList, PriceSummary, SelectedAddressCard, ScheduleConfirmation,
+//   CheckoutFooter, PaymentModal, DeleteAddressDialog, RetryBanner,
+//   FinalizingBanner, EmptyCartView
+// ============================================================================
+
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { CreateOrderRequest } from '@/types/orders';
 import { useAuth } from '@/hooks/useAuth';
 import { useOrders } from '@/hooks/useOrders';
 import { useCart } from '@/contexts/CartContext';
 import { useBuyNow } from '@/contexts/BuyNowContext';
+import { useAddresses } from '@/hooks/useAddresses';
+import { toast } from 'sonner';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
 } from '@/components/ui/collapsible';
-import { useAddresses } from '@/hooks/useAddresses';
+import { Separator } from '@/components/ui/separator';
+import { CreditCard, ChevronDown, ChevronRight } from 'lucide-react';
 
-// Location data (local JSON)
-import provincesJson from '@/lib/data/provinces.json';
-import districtsJson from '@/lib/data/districts.json';
-import sectorsJson from '@/lib/data/sectors.json';
 import sectorsFees from '@/lib/data/sectors_fees.json';
-import {
-  Loader2,
-  ShoppingCart,
-  CheckCircle2,
-  MapPin,
-  Package,
-  CreditCard,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-  AlertCircle,
-  Edit3,
-  Trash2,
-} from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import GuestCheckoutForm from '@/components/guest/GuestCheckoutForm';
-import { z } from 'zod';
+
+// Hooks
+import useCheckoutStorage from '@/hooks/useCheckoutStorage';
+import useCheckoutLocationData from '@/hooks/useCheckoutLocationData';
+import useOrdersEnabled from '@/hooks/useOrdersEnabled';
+import useCheckoutAddressHandlers from '@/hooks/useCheckoutAddressHandlers';
+import useCheckoutPayment from '@/hooks/useCheckoutPayment';
+import useCheckoutTotals from '@/hooks/useCheckoutTotals';
+import useCheckoutFlags from '@/hooks/useCheckoutFlags';
+import useSubmitOrder from '@/hooks/useSubmitOrder';
+import { useKPayPayment } from '@/hooks/useKPayPayment';
+import useGuestInfo from '@/hooks/useGuestInfo';
+
+// Components
 import CheckoutHeader from '@/components/checkout/CheckoutHeader';
 import OrderItemsList from '@/components/checkout/OrderItemsList';
 import PriceSummary from '@/components/checkout/PriceSummary';
 import PaymentSection from '@/components/checkout/PaymentSection';
 import CheckoutFooter from '@/components/checkout/CheckoutFooter';
 import PaymentModal from '@/components/checkout/PaymentModal';
-import useCheckoutTotals from '@/hooks/useCheckoutTotals';
-import useCheckoutFlags from '@/hooks/useCheckoutFlags';
-import useSubmitOrder from '@/hooks/useSubmitOrder';
-import { useKPayPayment } from '@/hooks/useKPayPayment';
-import useGuestInfo from '@/hooks/useGuestInfo';
-import { PAYMENTMETHODS } from '@/lib/services/kpay';
-import CheckoutAddressForm from '@/components/checkout/CheckoutAddressForm';
 import { CheckoutSkeleton } from '@/components/checkout/CheckoutSkeleton';
-import { navigateToThankYou } from '@/lib/navigation';
+import GuestCheckoutForm from '@/components/guest/GuestCheckoutForm';
+import RetryBanner from '@/components/checkout/RetryBanner';
+import FinalizingBanner from '@/components/checkout/FinalizingBanner';
+import EmptyCartView from '@/components/checkout/EmptyCartView';
+import AddressSection from '@/components/checkout/AddressSection';
+import DeliveryInstructionsSection from '@/components/checkout/DeliveryInstructionsSection';
+import ScheduleConfirmation from '@/components/checkout/ScheduleConfirmation';
+import SelectedAddressCard from '@/components/checkout/SelectedAddressCard';
+import DeleteAddressDialog from '@/components/checkout/DeleteAddressDialog';
+
+// Utilities
+import { validateCheckoutForm } from '@/lib/checkout/validation';
+import {
+  generateWhatsAppMessage,
+  openWhatsAppCheckout,
+} from '@/lib/checkout/whatsapp';
+
+// ============================================================================
 
 interface CartItem {
   id: string;
@@ -76,6 +80,7 @@ interface CartItem {
   sku?: string;
   variation_id?: string;
   variation_name?: string;
+  product_id?: string;
 }
 
 const CheckoutPage = ({
@@ -91,8 +96,7 @@ const CheckoutPage = ({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Guest checkout allowed — do not force login here. Use middleware for server-side protection when needed.
-
+  // Form state
   const [formData, setFormData] = useState({
     email: '',
     fullName: '',
@@ -101,188 +105,21 @@ const CheckoutPage = ({
     phone: '',
     delivery_notes: '',
   });
-  // LocalStorage persistence keys and helpers
-  const CHECKOUTSTORAGE_KEY = 'nihemart_checkout_v1';
+  const [errors, setErrors] = useState<any>({});
 
-  const loadCheckoutFromStorage = () => {
-    try {
-      if (typeof window === 'undefined') return null;
-      const raw = localStorage.getItem(CHECKOUTSTORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (_err) {
-      console.warn('Failed to load checkout from storage:', _err);
-      return null;
-    }
-  };
-
-  const saveCheckoutToStorage = (payload: any) => {
-    try {
-      if (typeof window === 'undefined') return;
-      localStorage.setItem(CHECKOUTSTORAGE_KEY, JSON.stringify(payload));
-    } catch (_err) {
-      console.warn('Failed to save checkout to storage:', _err);
-    }
-  };
-
-  const clearCheckoutStorage = () => {
-    try {
-      if (typeof window === 'undefined') return;
-      localStorage.removeItem(CHECKOUTSTORAGE_KEY);
-    } catch (_err) {
-      /* ignore */
-    }
-  };
-
-  // Clear all client-side checkout state after successful order creation
-  const clearAllCheckoutClientState = () => {
-    console.log('[clearAllCheckoutClientState] Starting cleanup...');
-    setPreventPersistence(true);
-    console.log('[clearAllCheckoutClientState] ✓ Persistence prevented');
-    try {
-      console.log(
-        '[clearAllCheckoutClientState] Clearing primary checkout storage...'
-      );
-      // primary checkout storage key
-      clearCheckoutStorage();
-      console.log(
-        '[clearAllCheckoutClientState] ✓ Primary checkout storage cleared'
-      );
-    } catch (_e) {
-      console.error(
-        '[clearAllCheckoutClientState] Failed to clear checkout storage:',
-        _e
-      );
-    }
-
-    try {
-      console.log(
-        '[clearAllCheckoutClientState] Clearing all localStorage checkout keys...'
-      );
-      // Make double-sure to remove the key if different casing or older keys exist
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.removeItem('nihemart_checkout_v1');
-          console.log(
-            '[clearAllCheckoutClientState] ✓ nihemart_checkout_v1 cleared'
-          );
-        } catch (_e) {
-          console.error(
-            '[clearAllCheckoutClientState] Failed to clear nihemart_checkout_v1:',
-            _e
-          );
-        }
-        try {
-          localStorage.removeItem('checkout');
-          console.log('[clearAllCheckoutClientState] ✓ checkout key cleared');
-        } catch (_e) {
-          console.error(
-            '[clearAllCheckoutClientState] Failed to clear checkout:',
-            _e
-          );
-        }
-      }
-    } catch (_e) {
-      console.error(
-        '[clearAllCheckoutClientState] Failed to clear primary storage keys:',
-        _e
-      );
-    }
-
-    try {
-      console.log('[clearAllCheckoutClientState] Clearing sessionStorage...');
-      if (typeof window !== 'undefined') {
-        sessionStorage.removeItem('kpay_reference');
-        console.log(
-          '[clearAllCheckoutClientState] ✓ kpay_reference cleared from sessionStorage'
-        );
-
-        // Clear any other sessionStorage checkout items
-        const sessionKeys = Object.keys(sessionStorage);
-        const checkoutSessionKeys = sessionKeys.filter(
-          key =>
-            key.toLowerCase().includes('checkout') ||
-            key.toLowerCase().includes('payment') ||
-            key.toLowerCase().includes('kpay')
-        );
-        checkoutSessionKeys.forEach(key => {
-          try {
-            sessionStorage.removeItem(key);
-            console.log(
-              `[clearAllCheckoutClientState] ✓ Session key cleared: ${key}`
-            );
-          } catch (_e) {
-            console.error(
-              `[clearAllCheckoutClientState] Failed to clear session key ${key}:`,
-              _e
-            );
-          }
-        });
-      }
-    } catch (_e) {
-      console.error(
-        '[clearAllCheckoutClientState] Failed to clear sessionStorage:',
-        _e
-      );
-    }
-
-    try {
-      console.log(
-        '[clearAllCheckoutClientState] Clearing cart from localStorage...'
-      );
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('cart');
-        console.log(
-          '[clearAllCheckoutClientState] ✓ cart cleared from localStorage'
-        );
-      }
-    } catch (_e) {
-      console.error('[clearAllCheckoutClientState] Failed to clear cart:', _e);
-    }
-
-    console.log(
-      '[clearAllCheckoutClientState] ✓ All checkout client state cleared successfully'
-    );
-  };
+  // Order items state
   const [orderItems, setOrderItems] = useState<CartItem[]>([]);
   const [isBuyNowFlow, setIsBuyNowFlow] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [errors, setErrors] = useState<any>({});
 
-  // Enhanced phone validation for Rwanda
-  const phoneSchema = z.object({
-    phone: z
-      .string()
-      .nonempty({
-        message: t('checkout.errors.phoneRequired') || 'Phone is required',
-      })
-      .refine(
-        val => {
-          // Clean the input - remove all non-digit characters except +
-          const cleaned = val.replace(/[^\d+]/g, '');
-
-          // Pattern 1: +250 followed by 9 digits (total 13 chars including +)
-          if (/^\+250\d{9}$/.test(cleaned)) return true;
-
-          // Pattern 2: 07 followed by 8 digits (total 10 digits)
-          if (/^07\d{8}$/.test(cleaned)) return true;
-
-          return false;
-        },
-        {
-          message:
-            t('checkout.errors.validPhone') ||
-            'Phone must be in format +250XXXXXXXXX or 07XXXXXXXX',
-        }
-      ),
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // UI state
   const [addressOpen, setAddressOpen] = useState(false);
   const [addNewOpen, setAddNewOpen] = useState(false);
-  const [_instructionsOpen, setInstructionsOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
 
+  // Context hooks
+  const { items: cartItems, clearCart, removeItem } = useCart();
+  const { item: buyNowItem, clearBuyNowItem } = useBuyNow();
   const {
     saved: savedAddresses,
     selected: selectedAddress,
@@ -293,433 +130,79 @@ const CheckoutPage = ({
     reloadSaved,
   } = useAddresses();
 
-  // State for temporary address used during checkout (GUESTS ONLY - not saved to DB)
-  const [tempCheckoutAddress, setTempCheckoutAddress] = useState<any>(null);
+  // Storage hook
+  const {
+    loadCheckoutFromStorage,
+    saveCheckoutToStorage,
+    clearCheckoutStorage,
+    clearAllCheckoutClientState,
+    preventPersistenceRef,
+  } = useCheckoutStorage();
 
-  // Effective address:
-  // - Logged-in users: Use selectedAddress from database
-  // - Guests: Use tempCheckoutAddress from localStorage
-  const effectiveAddress = isLoggedIn
-    ? selectedAddress
-    : tempCheckoutAddress || selectedAddress;
+  // Location data hook
+  const {
+    provinces,
+    districts,
+    sectors,
+    selectedProvince,
+    selectedDistrict,
+    selectedSector,
+    setSelectedProvince,
+    setSelectedDistrict,
+    setSelectedSector,
+  } = useCheckoutLocationData();
 
-  const { items: cartItems, clearCart, removeItem } = useCart();
+  // Orders enabled hook
+  const {
+    ordersEnabled,
+    ordersSource,
+    ordersDisabledMessage,
+    scheduleConfirmChecked,
+    setScheduleConfirmChecked,
+    scheduleNotes,
+    setScheduleNotes,
+  } = useOrdersEnabled();
 
-  // Load temporary address from localStorage on mount (GUESTS ONLY)
-  useEffect(() => {
-    // Skip temporary address loading for logged-in users
-    if (isLoggedIn) {
-      // Clear any stale temporary address for logged-in users
-      try {
-        localStorage.removeItem('checkout_temp_address');
-      } catch (_e) {
-        console.error('Error clearing temp address:', _e);
-      }
-      return;
-    }
+  // Address handlers hook
+  const addressHandlers = useCheckoutAddressHandlers({
+    isLoggedIn,
+    sectors,
+    districts,
+    setSelectedProvince,
+    setSelectedDistrict,
+    setSelectedSector,
+    selectedProvince,
+    selectedDistrict,
+    selectedSector,
+    setFormData,
+    setAddNewOpen,
+    setAddressOpen,
+    removeAddress,
+    reloadSaved,
+    selectedAddress,
+    selectAddress,
+    t,
+  });
 
-    // Load temporary address for guests
-    try {
-      const savedTempAddress = localStorage.getItem('checkout_temp_address');
-      if (savedTempAddress) {
-        const parsedAddress = JSON.parse(savedTempAddress);
-        setTempCheckoutAddress(parsedAddress);
+  // Payment hook
+  const payment = useCheckoutPayment({
+    user,
+    router,
+    clearAllCheckoutClientState,
+    clearBuyNowItem,
+    isBuyNowFlow,
+  });
 
-        // CRITICAL: Restore province/district/sector selections for Kigali detection
-        if (parsedAddress._temp) {
-          if (parsedAddress._temp.selectedProvince) {
-            setSelectedProvince(parsedAddress._temp.selectedProvince);
-          }
-          if (parsedAddress._temp.selectedDistrict) {
-            setSelectedDistrict(parsedAddress._temp.selectedDistrict);
-          }
-          if (parsedAddress._temp.selectedSector) {
-            setSelectedSector(parsedAddress._temp.selectedSector);
-          }
-        }
-
-        // Also update form data
-        setFormData(prev => ({
-          ...prev,
-          address: parsedAddress.street || parsedAddress.display_name || '',
-          city: parsedAddress.city || '',
-          phone: parsedAddress.phone || '',
-        }));
-      }
-    } catch (_error) {
-      console.error('Error loading temp address from localStorage:', _error);
-    }
-  }, [isLoggedIn]);
-
-  // Handler to update temp address from the form (GUESTS ONLY)
-  const handleUpdateTempAddress = (addressData: any) => {
-    // This function should only be used for guest users
-    if (isLoggedIn) {
-      console.warn(
-        'handleUpdateTempAddress called for logged-in user - this should not happen'
-      );
-      return;
-    }
-
-    // Preserve _temp data (province/district/sector selections) for Kigali detection
-    const preservedTempData = tempCheckoutAddress?._temp || {};
-    const updatedTemp = {
-      ...tempCheckoutAddress,
-      ...addressData,
-      _isTemp: true,
-      _temp: {
-        ...preservedTempData,
-        selectedProvince: selectedProvince,
-        selectedDistrict: selectedDistrict,
-        selectedSector: selectedSector,
-      },
-    };
-    setTempCheckoutAddress(updatedTemp);
-    try {
-      localStorage.setItem(
-        'checkout_temp_address',
-        JSON.stringify(updatedTemp)
-      );
-    } catch (_e) {
-      console.error('Error saving temp address:', _e);
-    }
-    // Update form data
-    setFormData(prev => ({
-      ...prev,
-      address: addressData.street || addressData.display_name || prev.address,
-      city: addressData.city || prev.city,
-      phone: addressData.phone || prev.phone,
-    }));
-    // Close the form and open address selection
-    setAddNewOpen(false);
-    setAddressOpen(true);
-    setEditingAddressId(null);
-    setHouseNumber('');
-    setPhoneInput('');
-  };
-
-  const handleUseAddressDirectly = (addressData: any) => {
-    // This function should only be used for guest users
-    if (isLoggedIn) {
-      console.warn(
-        'handleUseAddressDirectly called for logged-in user - addresses should be saved to DB'
-      );
-      return;
-    }
-
-    // Create a temporary address object that matches the saved address structure
-    const tempAddress = {
-      id: 'temp-checkout-address', // Temporary ID
-      display_name: addressData.display_name,
-      street: addressData.street,
-      house_number: addressData.house_number,
-      phone: addressData.phone,
-      city: addressData.city,
-      lat: addressData.lat,
-      lon: addressData.lon,
-      _isTemp: true, // Flag to identify this as temporary
-      ...addressData,
-    };
-
-    // CRITICAL: Set province/district/sector selections from the temp address
-    // This ensures Kigali detection works properly for temporary addresses
-    if (addressData._temp) {
-      if (addressData._temp.selectedProvince) {
-        setSelectedProvince(addressData._temp.selectedProvince);
-      }
-      if (addressData._temp.selectedDistrict) {
-        setSelectedDistrict(addressData._temp.selectedDistrict);
-      }
-      if (addressData._temp.selectedSector) {
-        setSelectedSector(addressData._temp.selectedSector);
-      }
-    }
-
-    // Save to state
-    setTempCheckoutAddress(tempAddress);
-
-    // Save to localStorage for persistence (including _temp data)
-    try {
-      localStorage.setItem(
-        'checkout_temp_address',
-        JSON.stringify(tempAddress)
-      );
-    } catch (_error) {
-      console.error('Error saving temp address to localStorage:', _error);
-    }
-
-    // Update form data
-    setFormData(prev => ({
-      ...prev,
-      address: addressData.street || addressData.display_name || '',
-      city: addressData.city || '',
-      phone: addressData.phone || '',
-    }));
-
-    // Close the address form
-    setAddNewOpen(false);
-    setAddressOpen(false);
-
-    toast.success(
-      t('checkout.addressReadyForCheckout') || 'Address ready for checkout!'
-    );
-  };
-
-  // Handler to clear temporary address
-  const handleClearTempAddress = () => {
-    setTempCheckoutAddress(null);
-    try {
-      localStorage.removeItem('checkout_temp_address');
-    } catch (_error) {
-      console.error('Error removing temp address from localStorage:', _error);
-    }
-    toast.info('Address cleared');
-  };
-
-  // Handler to edit address from checkout - opens the address form section
-  const handleEditAddressInCheckout = (addr: any) => {
-    // Close address selection and open the add/edit form
-    setAddressOpen(false);
-    setAddNewOpen(true);
-
-    // Set editing ID (use a special ID for temp addresses)
-    if (addr._isTemp) {
-      // For temp addresses, use a special marker
-      setEditingAddressId('temp-address-edit');
-      // Store temp address data for editing
-      setInlineEditData({
-        display_name: addr.display_name || '',
-        street: addr.street || '',
-        city: addr.city || '',
-        phone: addr.phone || '',
-        house_number: addr.house_number || '',
-        _isTemp: true,
-      });
-    } else {
-      setEditingAddressId(addr.id);
-    }
-
-    // Pre-fill form with address data
-    setHouseNumber(addr.house_number || '');
-    setPhoneInput(addr.phone || '');
-
-    // Try to match location selections from address data
-    // First try to find by street/display_name
-    let foundSector = sectors.find(
-      s => s.sct_name === addr.street || s.sct_name === addr.display_name
-    );
-
-    // If not found, try by city
-    if (!foundSector) {
-      foundSector = sectors.find(s => s.sct_name === addr.city);
-    }
-
-    if (foundSector) {
-      setSelectedSector(foundSector.sct_id);
-      setSelectedDistrict(foundSector.sct_district);
-      const foundDistrict = districts.find(
-        d => d.dst_id === foundSector.sct_district
-      );
-      if (foundDistrict) {
-        setSelectedProvince(foundDistrict.dst_province);
-      }
-    } else {
-      // If no sector match, try to find district by city
-      const foundDistrict = districts.find(
-        d => d.dst_name?.toLowerCase() === addr.city?.toLowerCase()
-      );
-      if (foundDistrict) {
-        setSelectedDistrict(foundDistrict.dst_id);
-        setSelectedProvince(foundDistrict.dst_province);
-      }
-    }
-
-    // Also update form data to show the address
-    setFormData(prev => ({
-      ...prev,
-      address: addr.street || addr.display_name || prev.address,
-      city: addr.city || prev.city,
-      phone: addr.phone || prev.phone,
-    }));
-  };
-
-  // Handler to initiate delete confirmation
-  const handleDeleteAddressInCheckout = (addr: any, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent address selection
-    setAddressToDelete(addr);
-    setDeleteConfirmOpen(true);
-  };
-
-  // Handler to confirm and execute delete
-  const handleConfirmDelete = async () => {
-    if (!addressToDelete) return;
-
-    if (addressToDelete._isTemp) {
-      handleClearTempAddress();
-      toast.success('Temporary address removed');
-    } else {
-      const success = await removeAddress(addressToDelete.id);
-      if (success) {
-        toast.success('Address deleted successfully');
-        await reloadSaved();
-        // If this was the selected address, clear selection
-        if (selectedAddress?.id === addressToDelete.id) {
-          selectAddress(null);
-        }
-      } else {
-        toast.error('Failed to delete address');
-      }
-    }
-    setDeleteConfirmOpen(false);
-    setAddressToDelete(null);
-  };
-
-  // KPay payment functionality
+  // Payment API hooks
   const {
     initiatePayment,
     formatPhoneNumber,
     validatePaymentRequest,
     isInitiating,
   } = useKPayPayment();
+  const { formatPhoneInput: guestFormatPhoneInput } = useGuestInfo();
 
-  const { formatPhoneInput } = useGuestInfo();
-
-  // Location data state
-  const [provinces, setProvinces] = useState<any[]>([]);
-  const [districts, setDistricts] = useState<any[]>([]);
-  const [sectors, setSectors] = useState<any[]>([]);
-
-  // Selected location ids
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
-
-  // Address form fields for new/edit
-  const [houseNumber, setHouseNumber] = useState<string>('');
-  const [phoneInput, setPhoneInput] = useState<string>('');
-  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  // Temp address data storage (for editing temp addresses in the form)
-  const [_inlineEditData, setInlineEditData] = useState<any>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [addressToDelete, setAddressToDelete] = useState<any>(null);
-  // address saving is handled by `CheckoutAddressForm` component now
-  // Pre-pay flow state: track when a payment returned to checkout and whether it's verified
-  const [_paymentReturnedOrderId, setPaymentReturnedOrderId] = useState<
-    string | null
-  >(null);
-  const [paymentVerified, setPaymentVerified] = useState<boolean>(false);
-  const [previousPaymentMethod, setPreviousPaymentMethod] = useState<
-    string | null
-  >(null);
-  // Track payment failures/timeouts so we can offer retry/alternate method UX
-  const [_paymentFailure, setPaymentFailure] = useState<{
-    kind: 'timedout' | 'failed' | 'not_found';
-    message?: string;
-    reference?: string;
-  } | null>(null);
-  const [isFinalizing, setIsFinalizing] = useState(false);
-  const [paymentInProgress, setPaymentInProgress] = useState(false);
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-  const [paymentReference, setPaymentReference] = useState<string | null>(null);
-  const [paymentCheckoutUrl, setPaymentCheckoutUrl] = useState<string | null>(
-    null
-  );
-  const [suppressEmptyCartRedirect, setSuppressEmptyCartRedirect] =
-    useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<
-    keyof typeof PAYMENTMETHODS | 'cash_on_delivery' | ''
-  >('');
-  const [mobileMoneyPhones, setMobileMoneyPhones] = useState<{
-    mtn_momo?: string;
-    airtel_money?: string;
-  }>({});
-  const [ordersEnabled, setOrdersEnabled] = useState<boolean | null>(null);
-  // track whether the orders_enabled flag came from an admin override or schedule
-  const [ordersSource, setOrdersSource] = useState<'admin' | 'schedule' | null>(
-    null
-  );
-  const [ordersDisabledMessage, setOrdersDisabledMessage] = useState<
-    string | null
-  >(null);
-
-  // When orders are disabled by schedule, require a one-time confirmation
-  // from the customer to deliver the order the next working day. The input
-  // for extra notes is optional.
-  const [scheduleConfirmChecked, setScheduleConfirmChecked] = useState(false);
-  const [scheduleNotes, setScheduleNotes] = useState<string>('');
-  const [preventPersistence, setPreventPersistence] = useState(false);
-
-  // Handle phone input with validation
-  const _handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    const formatted = formatPhoneInput(input);
-
-    // Limit length based on format
-    if (formatted.startsWith('+250')) {
-      if (formatted.replace(/[^\d]/g, '').length <= 12) {
-        setPhoneInput(formatted);
-      }
-    } else if (formatted.startsWith('07')) {
-      if (formatted.replace(/[^\d]/g, '').length <= 10) {
-        setPhoneInput(formatted);
-      }
-    } else {
-      // Allow initial typing
-      if (input.length <= 15) {
-        setPhoneInput(formatted);
-      }
-    }
-
-    // Clear phone error as user types
-    if (errors?.phone) {
-      setErrors((prev: any) => ({ ...prev, phone: undefined }));
-    }
-  };
-
-  // Phone/name helpers provided by `useGuestInfo()`
-
-  // Handle mobile money phone number changes
-  const handleMobileMoneyPhoneChange = (
-    method: 'mtn_momo' | 'airtel_money',
-    phoneNumber: string
-  ) => {
-    setMobileMoneyPhones(prev => ({
-      ...prev,
-      [method]: phoneNumber,
-    }));
-  };
-
-  // no hydration debug used
-
-  useEffect(() => {
-    try {
-      const addr = (effectiveAddress?.street || formData.address || '').trim();
-      const cityEmpty = !formData.city || !formData.city.trim();
-      if (!addr || !cityEmpty) return;
-
-      const parts = addr
-        .split(',')
-        .map((p: string) => p.trim())
-        .filter(Boolean);
-      if (parts.length >= 2) {
-        const possibleCity =
-          parts.length >= 2 ? parts[parts.length - 2] : parts[0];
-        if (possibleCity && possibleCity.length > 1) {
-          setFormData(prev => ({ ...prev, city: possibleCity }));
-          return;
-        }
-      }
-
-      if (/kigali/i.test(addr)) {
-        setFormData(prev => ({ ...prev, city: 'Kigali' }));
-      }
-    } catch (_err) {
-      console.error('Auto-fill city error:', _err);
-    }
-  }, [formData.address, selectedAddress]);
-
-  // Derive effective retry flags: prefer props, fall back to search params
-  // If searchParams is not populated (sometimes Next client hook is empty), fallback to parsing window.location.search
+  // Retry mode values
   const fallbackParams =
     typeof window !== 'undefined'
       ? new URLSearchParams(window.location.search)
@@ -728,1014 +211,65 @@ const CheckoutPage = ({
     isRetryMode ||
     searchParams?.get('retry') === 'true' ||
     fallbackParams?.get('retry') === 'true';
-
-  // Normalize orderId from props/query; treat literal 'null'/'undefined' as null
   const _rawOrderId =
     retryOrderId ??
     searchParams?.get('orderId') ??
-    (fallbackParams ? fallbackParams.get('orderId') : null) ??
+    fallbackParams?.get('orderId') ??
     null;
   const effectiveRetryOrderId =
     _rawOrderId && _rawOrderId !== 'null' && _rawOrderId !== 'undefined'
       ? _rawOrderId
       : null;
 
-  // Restore persisted checkout state (if any) on mount
-  useEffect(() => {
-    try {
-      const persisted = loadCheckoutFromStorage();
-      if (!persisted) return;
-
-      // Only restore when not in retry mode and when user hasn't already filled fields
-      if (!effectiveIsRetry && !isRetryMode) {
-        if (persisted.formData) {
-          const incoming = { ...persisted.formData } as any;
-          // Backwards compatibility: if persisted snapshot has firstName/lastName
-          // but not fullName, synthesize fullName.
-          if (!incoming.fullName && (incoming.firstName || incoming.lastName)) {
-            incoming.fullName = `${incoming.firstName || ''} ${
-              incoming.lastName || ''
-            }`.trim();
-          }
-          setFormData(prev => ({ ...prev, ...incoming }));
-        }
-        if (persisted.paymentMethod) setPaymentMethod(persisted.paymentMethod);
-        if (persisted.mobileMoneyPhones)
-          setMobileMoneyPhones(persisted.mobileMoneyPhones);
-        if ((!orderItems || orderItems.length === 0) && persisted.cart) {
-          // restore lightweight cart snapshot
-          try {
-            setOrderItems(persisted.cart);
-          } catch (_e) {
-            /* ignore */
-          }
-        }
-      }
-    } catch (_err) {
-      console.warn('Failed to restore checkout state:', _err);
-    }
-  }, []);
-
-  // Persist checkout state when relevant parts change (debounced)
-  useEffect(() => {
-    // Don't persist if we're preventing it (after successful order creation)
-    if (preventPersistence) return;
-
-    const toSave = {
-      formData,
-      paymentMethod,
-      mobileMoneyPhones,
-      cart: orderItems,
-      isBuyNowFlow, // Include Buy Now flag so payment flows can preserve cart correctly
-    };
-
-    const id = setTimeout(() => saveCheckoutToStorage(toSave), 250);
-    return () => clearTimeout(id);
-  }, [
-    formData,
-    paymentMethod,
-    mobileMoneyPhones,
-    orderItems,
-    preventPersistence,
-  ]);
-
-  // Detect return from KPay payment (card payments) - check for KPay return params
-  useEffect(() => {
-    if (!paymentModalOpen) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const kpayRef = urlParams.get('refid') || urlParams.get('reference');
-      const kpayTid = urlParams.get('tid') || urlParams.get('transactionId');
-      const paymentReturn = urlParams.get('payment') === 'return';
-      const referenceParam = urlParams.get('reference');
-
-      // If we have KPay return params, open the modal with the reference
-      if (
-        (kpayRef || kpayTid || paymentReturn) &&
-        (referenceParam || kpayRef)
-      ) {
-        const ref =
-          referenceParam || kpayRef || sessionStorage.getItem('kpay_reference');
-        if (ref && ref !== 'null' && ref !== 'undefined') {
-          setPaymentReference(ref);
-          setPaymentModalOpen(true);
-          // Clean up URL params
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
-        }
-      }
-    }
-  }, [paymentModalOpen, searchParams]);
-
-  // Detect return from payment flow (e.g. ?payment=success&orderId=...)
-  useEffect(() => {
-    try {
-      const p =
-        searchParams?.get('payment') ||
-        (typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('payment')
-          : null);
-      const oid =
-        searchParams?.get('orderId') ||
-        (typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('orderId')
-          : null);
-      if (p === 'success' && oid) {
-        setPaymentReturnedOrderId(oid);
-
-        // verify payment server-side to avoid spoofing
-        (async () => {
-          try {
-            const resp = await fetch(`/api/payments/order/${oid}`);
-            if (!resp.ok) {
-              setPaymentVerified(false);
-              return;
-            }
-            const payments = await resp.json();
-            const ok =
-              Array.isArray(payments) &&
-              payments.some(
-                (p: any) =>
-                  p.status === 'completed' || p.status === 'successful'
-              );
-            setPaymentVerified(!!ok);
-            if (ok) {
-              toast.success(
-                'Payment completed successfully. You can now finalize your order.'
-              );
-              setPaymentFailure(null);
-              // Cleanup any stored payment/session data now that the order is verified
-              try {
-                if (typeof window !== 'undefined') {
-                  sessionStorage.removeItem('kpay_reference');
-                  clearCheckoutStorage();
-                }
-              } catch (_e) {}
-            } else {
-              const msg =
-                'Payment returned but no successful payment was found. You can retry or choose another payment method.';
-              toast.error(msg);
-              setPaymentFailure({
-                kind: 'not_found',
-                message: msg,
-                reference: undefined,
-              });
-            }
-          } catch (_e) {
-            console.error('Failed to verify returned payment:', _e);
-            setPaymentOpen(true);
-            setPaymentFailure(null);
-          }
-        })();
-      }
-
-      // If payment succeeded but no orderId (session-based), attempt finalize immediately
-      if (p === 'success' && !oid) {
-        (async () => {
-          try {
-            const ref =
-              typeof window !== 'undefined'
-                ? sessionStorage.getItem('kpay_reference')
-                : null;
-            if (ref) {
-              setIsFinalizing(true);
-              const finResp = await fetch(`/api/payments/kpay/finalize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference: ref }),
-              });
-              if (finResp.ok) {
-                const finData = await finResp.json();
-
-                // If the finalize endpoint returned an orderId, go to it
-                if (finData?.success && finData.orderId) {
-                  setIsFinalizing(false);
-                  try {
-                    sessionStorage.removeItem('kpay_reference');
-                  } catch (_e) {}
-                  try {
-                    clearCheckoutStorage();
-                  } catch (_e) {}
-                  toast.success(
-                    'Payment verified and order created. Redirecting...'
-                  );
-                  if (user && user.id) {
-                    router.push(`/orders/${finData.orderId}`);
-                  } else {
-                    navigateToThankYou(router);
-                  }
-                  return;
-                }
-
-                // If the payment is completed but webhook didn't create an order,
-                // the finalize endpoint will report canCreateOrder: true.
-                // In that case, create the order now on behalf of the user using
-                // the persisted checkout snapshot (or in-memory state as a fallback),
-                // then attempt to link the completed payment to the newly created order.
-                if (finData?.success && finData.canCreateOrder) {
-                  try {
-                    // Prevent the empty-cart redirect while creating the order
-                    setSuppressEmptyCartRedirect(true);
-                    // Build order payload from persisted snapshot or current state
-                    const persisted =
-                      typeof window !== 'undefined'
-                        ? loadCheckoutFromStorage()
-                        : null;
-
-                    // In retry mode, always use current payment method, not persisted one
-                    const snapshot = persisted
-                      ? {
-                          ...persisted,
-                          paymentMethod: paymentMethod, // Override with current selection
-                          mobileMoneyPhones: mobileMoneyPhones, // Override with current phones
-                        }
-                      : {
-                          formData,
-                          paymentMethod,
-                          mobileMoneyPhones,
-                          cart: orderItems,
-                        };
-
-                    const derivedCityNow = deriveCity();
-                    const derivedFullNameNow =
-                      user?.user_metadata?.full_name?.trim() ||
-                      `${
-                        (snapshot.formData?.fullName as string) ||
-                        formData.fullName ||
-                        ''
-                      }`.trim();
-
-                    const [fNameNow, ...lPartsNow] = (
-                      derivedFullNameNow || ''
-                    ).split(' ');
-                    const lNameNow = lPartsNow.join(' ');
-
-                    const itemsForOrder = (
-                      snapshot.cart && Array.isArray(snapshot.cart)
-                        ? snapshot.cart
-                        : orderItems
-                    ).map((it: any) => ({
-                      product_id: it.product_id || it.id,
-                      product_variation_id:
-                        it.product_variation_id || it.variation_id || undefined,
-                      product_name: it.name,
-                      product_sku: it.sku || undefined,
-                      // Map cart 'variant' field to order 'variation_name'
-                      variation_name:
-                        it.variation_name || it.variant || undefined,
-                      price: it.price,
-                      quantity: it.quantity,
-                      total: it.price * it.quantity,
-                    }));
-
-                    const orderPayload: CreateOrderRequest = {
-                      order: {
-                        user_id: user!.id,
-                        subtotal: subtotal,
-                        tax: transport,
-                        total: total,
-                        customer_email:
-                          (snapshot.formData?.email as string) ||
-                          formData.email ||
-                          '',
-                        customer_first_name: (fNameNow || '').trim(),
-                        customer_last_name: (lNameNow || '').trim(),
-                        customer_phone:
-                          (
-                            selectedAddress?.phone ||
-                            (snapshot.formData?.phone as string) ||
-                            formData.phone ||
-                            ''
-                          ).trim() || undefined,
-                        delivery_address: (
-                          (selectedAddress?.street ??
-                            selectedAddress?.display_name ??
-                            (snapshot.formData?.address as string)) ||
-                          formData.address ||
-                          ''
-                        ).trim(),
-                        delivery_city: (
-                          derivedCityNow ||
-                          selectedAddress?.city ||
-                          (snapshot.formData?.city as string) ||
-                          formData.city ||
-                          ''
-                        ).trim(),
-                        status: 'pending',
-                        payment_method:
-                          (snapshot.paymentMethod as any) ||
-                          paymentMethod ||
-                          'cash_on_delivery',
-                        delivery_notes:
-                          (snapshot.formData?.delivery_notes as string) ||
-                          formData.delivery_notes ||
-                          '' ||
-                          undefined,
-                      },
-                      items: itemsForOrder,
-                    } as CreateOrderRequest;
-
-                    // Create the order now
-                    createOrder.mutate(orderPayload as CreateOrderRequest, {
-                      onSuccess: async (createdOrder: any) => {
-                        try {
-                          // Payment-order linking is handled automatically by the backend
-                          // when creating orders from payment sessions, so no manual linking needed
-                          // Clean up session storage reference if present
-                          const ref =
-                            typeof window !== 'undefined'
-                              ? sessionStorage.getItem('kpay_reference')
-                              : null;
-                          if (ref) {
-                            try {
-                              sessionStorage.removeItem('kpay_reference');
-                            } catch (_e) {}
-                          }
-
-                          try {
-                            clearAllCheckoutClientState();
-                          } catch (_e) {}
-
-                          toast.success(
-                            `Order #${createdOrder.order_number} has been created successfully!`
-                          );
-                          if (user && user.id) {
-                            router.push(`/orders/${createdOrder.id}`);
-                          } else {
-                            navigateToThankYou(router);
-                          }
-                        } catch (outerErr) {
-                          console.error(
-                            'Error after auto-create order:',
-                            outerErr
-                          );
-                          if (user && user.id) {
-                            router.push(`/orders/${createdOrder.id}`);
-                          } else {
-                            navigateToThankYou(router);
-                          }
-                        }
-                      },
-                      onError: (err: any) => {
-                        console.error('Auto-create order failed:', err);
-                        setSuppressEmptyCartRedirect(false);
-                        setIsFinalizing(false);
-
-                        // Handle out-of-stock errors
-                        const errorMessage =
-                          err?.response?.data?.error || err?.message || '';
-                        if (errorMessage.includes('Insufficient stock')) {
-                          toast.error(
-                            errorMessage ||
-                              'One or more items are out of stock. Please update your cart.'
-                          );
-                        } else {
-                          toast.error(
-                            'Failed to create order automatically. Please contact support with your payment reference.'
-                          );
-                        }
-                      },
-                      onSettled: () => {
-                        setIsFinalizing(false);
-                        setSuppressEmptyCartRedirect(false);
-                      },
-                    });
-
-                    return;
-                  } catch (_e) {
-                    console.error('Auto-finalize/create failed:', _e);
-                  }
-                }
-              }
-              setIsFinalizing(false);
-            }
-          } catch (_e) {
-            console.error('Finalize attempt failed on return:', _e);
-            setIsFinalizing(false);
-          }
-        })();
-      }
-    } catch (_e) {
-      // ignore
-    }
-  }, [searchParams]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    const checkReference = async (reference: string) => {
-      try {
-        // Poll with exponential backoff up to ~12s
-        const maxAttempts = 6;
-        for (let attempt = 0; attempt < maxAttempts && mounted; attempt++) {
-          const resp = await fetch(`/api/payments/kpay/status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reference }),
-          });
-
-          if (!resp.ok) {
-            // wait and retry
-            await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-            continue;
-          }
-
-          const data = await resp.json();
-
-          if (data.orderId) {
-            // Verify payments for the order
-            try {
-              const paymentsResp = await fetch(
-                `/api/payments/order/${data.orderId}`
-              );
-              if (paymentsResp.ok) {
-                const payments = await paymentsResp.json();
-                const ok =
-                  Array.isArray(payments) &&
-                  payments.some(
-                    (p: any) =>
-                      p.status === 'completed' || p.status === 'successful'
-                  );
-                setPaymentReturnedOrderId(data.orderId);
-                setPaymentVerified(!!ok);
-                if (ok) {
-                  toast.success(
-                    'Payment completed successfully. You can now finalize your order.'
-                  );
-                } else {
-                  const msg =
-                    'Payment returned but no successful payment was found. You can retry or choose another payment method.';
-                  toast.error(msg);
-                  setPaymentFailure({
-                    kind: 'not_found',
-                    message: msg,
-                    reference,
-                  });
-                }
-                try {
-                  sessionStorage.removeItem('kpay_reference');
-                } catch (_e) {}
-                try {
-                  clearCheckoutStorage();
-                } catch (_e) {}
-                return;
-              }
-            } catch (_e) {
-              // continue polling
-            }
-          }
-
-          if (!data.orderId && data.status === 'completed') {
-            try {
-              // Call finalize endpoint with the reference
-              const finResp = await fetch(`/api/payments/kpay/finalize`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reference }),
-              });
-
-              if (finResp.ok) {
-                const finData = await finResp.json();
-                if (finData?.success && finData.orderId) {
-                  setPaymentReturnedOrderId(finData.orderId);
-                  // Verify payments for the created order
-                  try {
-                    const paymentsResp2 = await fetch(
-                      `/api/payments/order/${finData.orderId}`
-                    );
-                    if (paymentsResp2.ok) {
-                      const payments2 = await paymentsResp2.json();
-                      const ok2 =
-                        Array.isArray(payments2) &&
-                        payments2.some(
-                          (p: any) =>
-                            p.status === 'completed' ||
-                            p.status === 'successful'
-                        );
-                      setPaymentVerified(!!ok2);
-                      if (ok2) {
-                        toast.success(
-                          'Payment verified and order created. Redirecting to order...'
-                        );
-                        // Clear reference and navigate to order
-                        try {
-                          sessionStorage.removeItem('kpay_reference');
-                        } catch (_e) {}
-                        try {
-                          clearCheckoutStorage();
-                        } catch (_e) {}
-                        setTimeout(
-                          () => router.push(`/orders/${finData.orderId}`),
-                          250
-                        );
-                        return;
-                      }
-                    }
-                  } catch (_e) {
-                    // ignore verification error
-                  }
-                }
-              }
-            } catch (_err) {
-              console.error('Failed to finalize session:', _err);
-            }
-          }
-
-          // If not found yet, wait then retry
-          await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-        }
-
-        if (mounted) {
-          const msg =
-            'Payment verification timed out. You can retry or choose another payment method.';
-          toast.error(msg);
-          setPaymentFailure({ kind: 'timedout', message: msg, reference });
-          try {
-            // keep the reference in storage so finalize can still pick it up if webhook runs later
-            // sessionStorage.removeItem("kpay_reference");
-          } catch (_e) {}
-        }
-      } catch (_err) {
-        console.error('Failed to poll payment status by reference:', _err);
-      }
-    };
-
-    try {
-      const p =
-        searchParams?.get('payment') ||
-        (typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('payment')
-          : null);
-      const oid =
-        searchParams?.get('orderId') ||
-        (typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('orderId')
-          : null);
-
-      // If already handled by the orderId-based flow above, skip
-      if (p === 'success' && oid) return;
-
-      if (p === 'success' && !oid) {
-        try {
-          const ref =
-            typeof window !== 'undefined'
-              ? sessionStorage.getItem('kpay_reference')
-              : null;
-          if (ref) {
-            // trigger a best-effort status check so DB may be up-to-date
-            fetch(`/api/payments/kpay/status`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ reference: ref }),
-            }).catch(() => {});
-          }
-        } catch (_e) {}
-
-        // Inform the user that payment was successful and they can place order
-        toast.success(
-          'Payment completed successfully. You can now finalize your order on this page.'
-        );
-        // Mark payment as verified for session-based flows so the Place Order button becomes enabled
-        try {
-          setPaymentVerified(true);
-        } catch (_e) {}
-        // Do not clear paymentReturnedOrderId - allow user to create order which will trigger linking
-        return;
-      }
-
-      // Check for stored reference and start polling by reference only if present
-      const ref =
-        typeof window !== 'undefined'
-          ? sessionStorage.getItem('kpay_reference')
-          : null;
-      if (ref) {
-        // start polling
-        checkReference(ref);
-      }
-    } catch (_e) {
-      /* ignore */
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [searchParams]);
-
-  useEffect(() => {
-    try {
-      // If there are no saved addresses, nothing to do
-      if (!Array.isArray(savedAddresses) || savedAddresses.length === 0) return;
-      if (effectiveIsRetry) {
-        const persisted = loadCheckoutFromStorage();
-        if (persisted && persisted.formData) {
-          const orderAddrRaw = (persisted.formData.address || '').toLowerCase();
-          const orderCity = (persisted.formData.city || '').toLowerCase();
-          const orderPhone = persisted.formData.phone || '';
-
-          const match = savedAddresses.find((addr: any) => {
-            const addrStr = [addr.display_name, addr.street, addr.city]
-              .filter(Boolean)
-              .join(' ')
-              .toLowerCase();
-
-            return (
-              (orderAddrRaw &&
-                orderAddrRaw.length > 0 &&
-                addrStr.includes(orderAddrRaw)) ||
-              (orderCity &&
-                orderCity.length > 0 &&
-                addrStr.includes(orderCity)) ||
-              (addr.phone && orderPhone && addr.phone === orderPhone)
-            );
-          });
-
-          if (match) {
-            if (selectedAddress?.id !== match.id) {
-              selectAddress(match.id);
-              const foundSector = sectors.find(
-                (s: any) =>
-                  s.sct_name === match.street ||
-                  s.sct_name === match.display_name ||
-                  s.sct_name === match.city
-              );
-              if (foundSector) {
-                setSelectedSector(foundSector.sct_id);
-                setSelectedDistrict(foundSector.sct_district);
-                const foundDistrict = districts.find(
-                  d => d.dst_id === foundSector.sct_district
-                );
-                if (foundDistrict)
-                  setSelectedProvince(foundDistrict.dst_province);
-              }
-
-              setFormData(prev => ({
-                ...prev,
-                address: match.display_name || prev.address,
-                city: match.city || prev.city,
-                phone: match.phone || prev.phone,
-              }));
-            }
-          }
-        }
-
-        return;
-      }
-
-      // If not in retry mode, do nothing here.
-    } catch (_err) {
-      console.error('Address preselect error:', _err);
-    }
-  }, [effectiveIsRetry, savedAddresses, selectedAddress, sectors, districts]);
-
-  // CRITICAL FIX: Only auto-select address on initial load, and ONLY if user hasn't explicitly unselected
-  // This respects user's explicit unselection choice
-  useEffect(() => {
-    try {
-      if (!Array.isArray(savedAddresses) || savedAddresses.length === 0) {
-        return;
-      }
-
-      // CRITICAL: Respect explicit unselection - if user explicitly unselected, never auto-select
-      const explicitUnselect =
-        typeof window !== 'undefined'
-          ? localStorage.getItem('nihemart_explicit_unselect_address_v1') ===
-            'true'
-          : false;
-
-      if (explicitUnselect) {
-        // User explicitly unselected - respect their choice and don't auto-select
-        return;
-      }
-
-      // If there is already a selected address, do not override it
-      if (selectedAddress) return;
-
-      // Prefer the explicit default
-      let pick = savedAddresses.find((a: any) => a.is_default);
-
-      // If none marked default, but there's only one address, pick it
-      if (!pick && savedAddresses.length === 1) pick = savedAddresses[0];
-
-      // Otherwise fall back to the first address in the list
-      if (!pick) pick = savedAddresses[0];
-
-      if (pick) {
-        // capture values locally to avoid TS complaints about possibly undefined pick within closures
-        const _pick = pick as any;
-        selectAddress(_pick.id);
-
-        // Populate form fields with picked address
-        setFormData(prev => ({
-          ...prev,
-          address: _pick.display_name || prev.address,
-          city: _pick.city || prev.city,
-          phone: _pick.phone || prev.phone,
-        }));
-
-        // Try to match location selections based on picked address
-        const foundSector = sectors.find(
-          (s: any) =>
-            s.sct_name === _pick.street ||
-            s.sct_name === _pick.display_name ||
-            s.sct_name === _pick.city
-        );
-        if (foundSector) {
-          setSelectedSector(foundSector.sct_id);
-          setSelectedDistrict(foundSector.sct_district);
-          const foundDistrict = districts.find(
-            d => d.dst_id === foundSector.sct_district
-          );
-          if (foundDistrict) setSelectedProvince(foundDistrict.dst_province);
-        }
-      }
-    } catch (_err) {
-      console.error('Auto-select address error:', _err);
-    }
-  }, [savedAddresses, selectedAddress, sectors, districts, selectAddress]);
-
-  // If a saved address is selected but location lists (sectors/districts)
-  // were not available at the time of selection, attempt to derive the
-  // corresponding sector/district/province once those lists load.
-  useEffect(() => {
-    try {
-      if (!selectedAddress) return;
-      // If province already set, nothing to do
-      if (selectedProvince) return;
-      if (!Array.isArray(sectors) || sectors.length === 0) return;
-
-      const foundSector = sectors.find(
-        (s: any) =>
-          s.sct_name === selectedAddress.street ||
-          s.sct_name === selectedAddress.display_name ||
-          s.sct_name === selectedAddress.city
+  // Derive city from location
+  const deriveCity = useCallback(() => {
+    if (selectedSector) {
+      const s = sectors.find(
+        (x: any) => String(x.sct_id) === String(selectedSector)
       );
-      if (foundSector) {
-        setSelectedSector(foundSector.sct_id);
-        setSelectedDistrict(foundSector.sct_district);
-        const foundDistrict = districts.find(
-          (d: any) => d.dst_id === foundSector.sct_district
-        );
-        if (foundDistrict) setSelectedProvince(foundDistrict.dst_province);
-      }
-    } catch (_err) {
-      console.error('Address -> location post-sync error:', _err);
+      if (s?.sct_name) return s.sct_name;
     }
-  }, [selectedAddress, selectedProvince, sectors, districts]);
-
-  // Show a small banner when retrying due to timeout
-  const _retryTimedOut = Boolean(searchParams?.get('timedout'));
-
-  // Fetch orders_enabled flag and subscribe for realtime changes
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await fetch('/api/admin/settings/orders-enabled');
-        if (!res.ok) {
-          if (mounted) {
-            setOrdersEnabled(null);
-            setOrdersSource(null);
-            setOrdersDisabledMessage(null);
-          }
-        } else {
-          const j = await res.json();
-          if (mounted) {
-            setOrdersEnabled(Boolean(j.enabled));
-            setOrdersSource(j.source || null);
-            setOrdersDisabledMessage(j.message || null);
-          }
-        }
-      } catch (_err) {
-        console.warn('Failed to fetch orders_enabled flag:', _err);
-        if (mounted) {
-          setOrdersEnabled(null);
-          setOrdersSource(null);
-          setOrdersDisabledMessage(null);
-        }
-      }
-    })();
-
-    // No polling - schedule will handle updates at 9:00 and 9:30 Kigali time
-    // Frontend will get updated values on page refresh or navigation
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Keep local orderItems in sync with cart context
-  useEffect(() => {
-    try {
-      // If in retry mode, try to restore a persisted lightweight checkout snapshot
-      if (effectiveIsRetry) {
-        const persisted = loadCheckoutFromStorage();
-        if (persisted) {
-          if (persisted.cart && Array.isArray(persisted.cart)) {
-            try {
-              setOrderItems(persisted.cart);
-            } catch (_e) {
-              console.warn('Failed to restore persisted cart:', _e);
-            }
-          }
-
-          if (persisted.formData) {
-            setFormData(prev => ({ ...prev, ...persisted.formData }));
-          }
-
-          // reset certain transient UI state when restoring
-          setPaymentMethod('');
-          setMobileMoneyPhones({});
-
-          // Clear the persisted checkout data to prevent old payment method from being restored
-          clearCheckoutStorage();
-
-          // Fetch previous payment method for retry notice
-          if (effectiveRetryOrderId) {
-            (async () => {
-              try {
-                const resp = await fetch(
-                  `/api/payments/order/${effectiveRetryOrderId}`
-                );
-                if (resp.ok) {
-                  const payments = await resp.json();
-                  if (Array.isArray(payments) && payments.length > 0) {
-                    // Get the most recent failed payment
-                    const failedPayment = payments
-                      .filter(
-                        (p: any) =>
-                          p.status === 'failed' ||
-                          p.status === 'cancelled' ||
-                          p.status === 'timeout'
-                      )
-                      .sort(
-                        (a: any, b: any) =>
-                          new Date(b.created_at).getTime() -
-                          new Date(a.created_at).getTime()
-                      )[0];
-
-                    if (failedPayment) {
-                      setPreviousPaymentMethod(failedPayment.payment_method);
-                    }
-                  }
-                }
-              } catch (_e) {
-                console.warn('Failed to fetch previous payment method:', _e);
-              }
-            })();
-          }
-
-          return;
-        }
-      }
-
-      // Normal path: sync from CartContext items into local orderItems
-      if (Array.isArray(cartItems)) {
-        console.debug('CheckoutPage: Syncing cart items to order items');
-        const cleaned = cartItems.map((item: any) => ({
-          ...item,
-          id: typeof item.id === 'string' ? item.id.replace(/-$/, '') : item.id,
-          variation_id:
-            typeof item.product_variation_id === 'string'
-              ? item.product_variation_id.replace(/-$/, '')
-              : item.variation_id || item.product_variation_id,
-        }));
-        setOrderItems(cleaned);
-        setIsBuyNowFlow(false);
-      }
-    } catch (_err) {
-      console.error('CheckoutPage: Error syncing/restoring cart items:', _err);
+    if (selectedDistrict) {
+      const d = districts.find(
+        (x: any) => String(x.dst_id) === String(selectedDistrict)
+      );
+      if (d?.dst_name) return d.dst_name;
     }
-
-    // Pre-fill user data if logged in (only when not in retry mode)
-    if (user && !effectiveIsRetry) {
-      console.debug('CheckoutPage: Pre-filling user data');
-      setFormData(prev => ({
-        ...prev,
-        email: user.email || '',
-        fullName: user.user_metadata?.full_name || '',
-      }));
+    if (selectedProvince) {
+      const p = provinces.find(
+        (x: any) => String(x.prv_id) === String(selectedProvince)
+      );
+      if (p?.prv_name) return p.prv_name;
     }
-  }, [cartItems, user, effectiveIsRetry]);
-
-  // Buy-now sync: prefer buy-now item over cart when present
-  const { item: buyNowItem, clearBuyNowItem } = useBuyNow();
-
-  useEffect(() => {
-    try {
-      if (buyNowItem) {
-        // adapt shape to CartItem
-        const mapped: any = {
-          id: buyNowItem.id,
-          product_id: buyNowItem.product_id,
-          name: buyNowItem.name,
-          price: buyNowItem.price,
-          quantity: buyNowItem.quantity || 1,
-          variation_name: buyNowItem.variant,
-          image: buyNowItem.image, // Include image for display
-        };
-        setOrderItems([mapped]);
-        setIsBuyNowFlow(true);
-        setIsLoading(false);
-      } else {
-        // If buyNow cleared and cart has items, restore cart sync
-        if (Array.isArray(cartItems) && cartItems.length > 0) {
-          const cleaned = cartItems.map((item: any) => ({
-            ...item,
-            id:
-              typeof item.id === 'string' ? item.id.replace(/-$/, '') : item.id,
-            variation_id:
-              typeof item.product_variation_id === 'string'
-                ? item.product_variation_id.replace(/-$/, '')
-                : item.variation_id || item.product_variation_id,
-          }));
-          setOrderItems(cleaned);
-          setIsBuyNowFlow(false);
-        }
-        setIsLoading(false);
-      }
-    } catch (_e) {
-      console.error('BuyNow sync failed:', _e);
-      setIsLoading(false);
-    }
-  }, [buyNowItem, cartItems]);
-
-  // Load location data from JSON imports
-  useEffect(() => {
-    try {
-      const extract = (j: any, namePart: string) => {
-        if (!j) return [];
-        if (Array.isArray(j)) {
-          const table = j.find(
-            x => x.type === 'table' && x.name?.includes(namePart)
-          );
-          return table?.data || [];
-        }
-        if (j.type === 'table' && j.data) return j.data;
-        return [];
-      };
-
-      setProvinces(extract(provincesJson, '1_provinces'));
-      setDistricts(extract(districtsJson, '2_districts'));
-      setSectors(extract(sectorsJson, '3_sectors'));
-    } catch (_err) {
-      console.error('Failed to load location data:', _err);
-    }
-  }, []);
-
-  // Update dependent lists when selections change
-  useEffect(() => {
-    if (!selectedProvince) return;
-    setSelectedDistrict(null);
-    setSelectedSector(null);
-  }, [selectedProvince]);
-
-  useEffect(() => {
-    if (!selectedDistrict) return;
-    setSelectedSector(null);
-  }, [selectedDistrict]);
-
-  // Redirect if cart is empty (but not in retry mode or while submitting/initiating payment)
-  useEffect(() => {
-    if (
-      orderItems.length === 0 &&
-      !isRetryMode &&
-      !isSubmitting &&
-      !isInitiating &&
-      !paymentInProgress &&
-      !suppressEmptyCartRedirect
-    ) {
-      const timer = setTimeout(() => {
-        router.push('/');
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-    return;
+    return (
+      addressHandlers.effectiveAddress?.city || formData.city?.trim() || ''
+    );
   }, [
-    orderItems.length,
-    router,
-    isRetryMode,
-    isSubmitting,
-    isInitiating,
-    paymentInProgress,
+    selectedSector,
+    selectedDistrict,
+    selectedProvince,
+    sectors,
+    districts,
+    provinces,
+    addressHandlers.effectiveAddress,
+    formData.city,
   ]);
 
-  const {
-    subtotal,
-    selectedSectorObj: _selectedSectorObj,
-    transport,
-    total,
-  } = useCheckoutTotals({
+  // Price calculations
+  const { subtotal, transport, total } = useCheckoutTotals({
     orderItems,
     sectors,
     sectorsFees,
-    selectedAddress,
+    selectedAddress: addressHandlers.effectiveAddress,
     selectedSector,
     hasAddress: Boolean(
-      // Determine isKigali and hasAddress inline to keep behavior identical
-      (selectedAddress &&
-        (selectedAddress.display_name || selectedAddress.city)) ||
-      (formData.address && formData.address.trim())
+      addressHandlers.effectiveAddress?.display_name ||
+      addressHandlers.effectiveAddress?.city ||
+      formData.address?.trim()
     ),
   });
 
+  // Validation flags
   const {
     hasItems,
     isKigali,
@@ -1743,233 +277,53 @@ const CheckoutPage = ({
     hasAddress,
     hasEmail,
     hasValidPhone,
-    paymentRequiresVerification: _paymentRequiresVerification,
     missingSteps,
-    allStepsCompleted: _allStepsCompleted,
-    selectedProvinceObj: _selectedProvinceObj,
   } = useCheckoutFlags({
     orderItemsCount: orderItems.length,
-    selectedAddress: effectiveAddress,
+    selectedAddress: addressHandlers.effectiveAddress,
     formData,
     selectedProvince,
     provinces,
     selectedSector,
     sectors,
     formatPhoneNumber,
-    paymentMethod: paymentMethod as any,
-    paymentVerified,
+    paymentMethod: payment.paymentMethod as any,
+    paymentVerified: payment.paymentVerified,
     effectiveIsRetry,
     ordersEnabled,
     ordersSource,
     scheduleConfirmChecked,
   });
 
-  // payment URL/session helpers
-  const urlPaymentParam =
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('payment')
-      : null;
-  const urlOrderIdParam =
-    typeof window !== 'undefined'
-      ? new URLSearchParams(window.location.search).get('orderId')
-      : null;
-  const _sessionPaymentSuccess =
-    urlPaymentParam === 'success' && !urlOrderIdParam;
-
-  const _getProvinceLabel = (p: any) => {
-    const raw = String(p?.prv_name || '').toLowerCase();
-    if (
-      raw.includes('south') ||
-      raw.includes('majyepfo') ||
-      raw.includes('amajyepfo')
-    )
-      return t('province.south');
-    if (
-      raw.includes('north') ||
-      raw.includes('amajyaruguru') ||
-      raw.includes('amajyaruguru')
-    )
-      return t('province.north');
-    if (raw.includes('east') || raw.includes('iburasirazuba'))
-      return t('province.east');
-    if (raw.includes('west') || raw.includes('iburengerazuba'))
-      return t('province.west');
-
-    const slug = raw.replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-    const tryKey = `province.${slug}`;
-    const resolved = t(tryKey);
-    if (resolved !== tryKey) return resolved;
-    return p?.prv_name || tryKey;
-  };
-
   // Form validation
-  // Helper to derive a reasonable city value from selected location or saved address
-  const deriveCity = () => {
-    // Priority: selectedSector (sector name) -> selectedDistrict (district name) -> selectedProvince (province name) -> selectedAddress.city -> formData.city
-    try {
-      if (selectedSector) {
-        const s = sectors.find(
-          x => String(x.sct_id) === String(selectedSector)
-        );
-        if (s && s.sct_name) return s.sct_name;
-      }
+  const validateForm = useCallback(
+    () =>
+      validateCheckoutForm({
+        formData,
+        selectedAddress: addressHandlers.effectiveAddress,
+        isLoggedIn,
+        t,
+      }),
+    [formData, addressHandlers.effectiveAddress, isLoggedIn, t]
+  );
 
-      if (selectedDistrict) {
-        const d = districts.find(
-          x => String(x.dst_id) === String(selectedDistrict)
-        );
-        if (d && d.dst_name) return d.dst_name;
-      }
-
-      if (selectedProvince) {
-        const p = provinces.find(
-          x => String(x.prv_id) === String(selectedProvince)
-        );
-        if (p && p.prv_name) return p.prv_name;
-      }
-
-      if (selectedAddress?.city) return selectedAddress.city;
-
-      if (formData.city && formData.city.trim()) return formData.city.trim();
-    } catch (_err) {
-      console.error('deriveCity error:', _err);
-    }
-
-    return '';
-  };
-
-  const validateForm = () => {
-    const formErrors: any = {};
-    const emailPattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-
-    // First/last name are optional on the checkout form because the
-    // customer's name should be derived from their user profile when
-    // they're logged in. If not logged in, fallback to form values.
-
-    // For logged in users, validate email if provided
-    if (isLoggedIn && formData.email && formData.email.trim()) {
-      if (!emailPattern.test(formData.email)) {
-        formErrors.email =
-          t('checkout.errors.validEmailRequired') ||
-          'Please enter a valid email';
-      }
-    }
-    // For guest users, email is no longer required (removed from form)
-
-    // When placing an order as a guest require the customer's name and phone
-    if (!isLoggedIn) {
-      if (!formData.fullName || !String(formData.fullName).trim()) {
-        formErrors.fullName =
-          t('checkout.errors.fullNameRequired') || 'Full name is required';
-      }
-
-      try {
-        // Phone may come from the selected address; prefer that when present
-        const phoneToValidate =
-          (selectedAddress && selectedAddress.phone) || formData.phone || '';
-        phoneSchema.parse({ phone: phoneToValidate });
-      } catch (ve: any) {
-        const first =
-          ve?.errors?.[0]?.message || t('checkout.errors.validPhone');
-        formErrors.phone = first;
-      }
-    }
-
-    const hasAddressValue =
-      (formData.address && formData.address.trim()) || selectedAddress;
-    if (!hasAddressValue)
-      formErrors.address =
-        t('checkout.errors.addressRequired') || 'Delivery address is required';
-
-    // City is derived from selected location (sector/district/province) or saved address.
-    // Do not require the user to enter a separate `city` value.
-
-    return formErrors;
-  };
-
+  // Phone change handler
   const handleGuestPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    const formatted = formatPhoneInput(input);
+    const formatted = guestFormatPhoneInput(e.target.value);
     setFormData(prev => ({ ...prev, phone: formatted }));
     if (errors?.phone)
       setErrors((prev: any) => ({ ...prev, phone: undefined }));
   };
 
-  // NOTE: Retry flows no longer rely on fetching existing orders server-side.
-  // We removed server-order-dependent retry logic. The checkout now uses the
-  // persisted local storage snapshot (CHECKOUTSTORAGE_KEY) and the current
-  // in-memory cart to initiate a new payment session.
-
-  // Handle payment modal success - redirect after order is created
-  const handlePaymentSuccess = (orderId: string) => {
-    // Clean up all checkout state
-    setPaymentModalOpen(false);
-    setPaymentReference(null);
-    setPaymentCheckoutUrl(null);
-    setPaymentInProgress(false);
-    setIsSubmitting(false);
-
-    // Clear checkout data and buy now item
-    try {
-      clearAllCheckoutClientState();
-    } catch (_e) {
-      console.error('Failed to clear checkout state:', _e);
-    }
-
-    // Clear buy now item if this was a buy now flow
-    try {
-      if (isBuyNowFlow && clearBuyNowItem) {
-        clearBuyNowItem();
-      }
-    } catch (_e) {
-      console.error('Failed to clear buy now item:', _e);
-    }
-
-    // Small delay for better UX before redirect
-    setTimeout(() => {
-      if (user && user.id) {
-        router.push(`/orders/${orderId}`);
-      } else {
-        navigateToThankYou(router);
-      }
-    }, 300);
-  };
-
-  // Handle payment modal close
-  const handlePaymentModalClose = () => {
-    setPaymentModalOpen(false);
-    setPaymentReference(null);
-    setPaymentCheckoutUrl(null);
-    setPaymentInProgress(false);
-    setIsSubmitting(false);
-    // Don't clear paymentFailure here - let user see the error if they want to retry
-    // It will be cleared when they initiate a new payment
-  };
-
-  // Handle payment initiated callback (unified checkout flow)
-  const handlePaymentInitiated = (paymentInfo: {
-    reference: string | null;
-    checkoutUrl: string | null;
-    isCardPayment: boolean;
-  }) => {
-    // Clear any previous payment failure/error states when starting a new payment
-    // This ensures users don't see errors from previous failed payment attempts
-    setPaymentFailure(null);
-
-    setPaymentReference(paymentInfo.reference);
-    setPaymentCheckoutUrl(paymentInfo.checkoutUrl);
-    setPaymentModalOpen(true);
-  };
-
-  // Handle order creation or retry payment (moved into hook)
+  // Order submission
   const handleCreateOrder = useSubmitOrder({
-    isSubmitting,
-    setPaymentFailure,
+    isSubmitting: payment.isSubmitting,
+    setPaymentFailure: payment.setPaymentFailure,
     validateForm,
     orderItems,
     t,
     toast,
-    setIsSubmitting,
+    setIsSubmitting: payment.setIsSubmitting,
     setErrors,
     ordersEnabled,
     ordersSource,
@@ -1981,158 +335,342 @@ const CheckoutPage = ({
     transport,
     total,
     createOrder,
-    setSuppressEmptyCartRedirect,
-    setPreventPersistence,
+    setSuppressEmptyCartRedirect: payment.setSuppressEmptyCartRedirect,
+    setPreventPersistence: (val: boolean) => {
+      preventPersistenceRef.current = val;
+    },
     clearCart,
     setOrderItems,
     clearAllCheckoutClientState,
     router,
-    setPaymentInProgress,
-    mobileMoneyPhones,
+    setPaymentInProgress: payment.setPaymentInProgress,
+    mobileMoneyPhones: payment.mobileMoneyPhones,
     initiatePayment,
     formatPhoneNumber,
     validatePaymentRequest,
-    paymentVerified,
-    selectedAddress: effectiveAddress,
+    paymentVerified: payment.paymentVerified,
+    selectedAddress: addressHandlers.effectiveAddress,
     clearBuyNowItem,
     isBuyNowFlow,
     scheduleNotes,
     ordersDisabledMessage,
-    paymentMethod,
+    paymentMethod: payment.paymentMethod,
     effectiveIsRetry,
     effectiveRetryOrderId,
-    onPaymentInitiated: handlePaymentInitiated, // Add callback for unified checkout
+    onPaymentInitiated: payment.handlePaymentInitiated,
   });
 
-  const generateWhatsAppMessage = () => {
-    const productDetails = orderItems
-      .map(item => {
-        // Prefer explicit product_id when available, otherwise use item.id
-        const productId = (item as any).product_id || item.id || '';
-        const productLink = `https://nihemart.rw/products/${productId}`;
-
-        const lines: string[] = [];
-        // Line 1: product name (variation) x qty - total
-        lines.push(
-          `${item.name}${
-            item.variation_name ? ` (${item.variation_name})` : ''
-          } x${item.quantity} - ${(
-            item.price * item.quantity
-          ).toLocaleString()} RWF`
-        );
-
-        // SKU line if available
-        if (item.sku) lines.push(`SKU: ${item.sku}`);
-
-        // Variation id if present
-        if ((item as any).variation_id)
-          lines.push(`Variation ID: ${(item as any).variation_id}`);
-
-        // Product link
-        lines.push(`Link: ${productLink}`);
-
-        return lines.join('\n');
-      })
-      .join('\n\n');
-
-    const derivedCity = deriveCity();
-
-    const message = `
-*New Order Request*
-
-*Customer Details:*
-   Name: ${formData.fullName}
-Email: ${formData.email}
-Phone: ${formData.phone}
-Address: ${formData.address}, ${derivedCity || formData.city}
-
-*Products:*
-${productDetails}
-
-*Order Summary:*
-Subtotal: ${subtotal.toLocaleString()} RWF
-Transport: ${transport.toLocaleString()} RWF
-Total: ${total.toLocaleString()} RWF
-    `;
-    // If schedule notes exist (customer confirmed outside working hours), append them
-    let final = message;
-    if (
-      ordersEnabled === false &&
-      ordersSource === 'schedule' &&
-      scheduleNotes
-    ) {
-      final = final + `\n\nSchedule notes:\n${scheduleNotes}`;
-    }
-    return encodeURIComponent(final);
-  };
-
+  // WhatsApp checkout
   const handleWhatsAppCheckout = () => {
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
-
     if (orderItems.length === 0) {
       toast.error('Your cart is empty');
       return;
     }
-
-    // Respect orders-enabled flag for WhatsApp flow as well
-    if (ordersEnabled === false) {
-      if (ordersSource === 'admin') {
-        toast.error(
-          ordersDisabledMessage ||
-            t('checkout.ordersDisabledMessage') ||
-            'Ordering is currently disabled by the admin.'
-        );
-        return;
-      }
-
-      if (ordersSource === 'schedule' && !scheduleConfirmChecked) {
-        // Prompt the user to check the confirmation checkbox
-        toast.info(
-          t('checkout.confirmScheduleDelivery') ||
-            'Please confirm you want this order delivered tomorrow during working hours by checking the box below.'
-        );
-        return;
-      }
+    if (ordersEnabled === false && ordersSource === 'admin') {
+      toast.error(
+        ordersDisabledMessage ||
+          t('checkout.ordersDisabledMessage') ||
+          'Ordering is currently disabled.'
+      );
+      return;
     }
-
-    // Updated WhatsApp number (international format without +)
-    const phoneNumber = '250792412177';
-    const message = generateWhatsAppMessage();
-    const url = `https://wa.me/${phoneNumber}?text=${message}`;
-    window.open(url, '_blank');
+    if (
+      ordersEnabled === false &&
+      ordersSource === 'schedule' &&
+      !scheduleConfirmChecked
+    ) {
+      toast.info(
+        t('checkout.confirmScheduleDelivery') ||
+          'Please confirm schedule delivery.'
+      );
+      return;
+    }
+    openWhatsAppCheckout(
+      generateWhatsAppMessage({
+        orderItems,
+        formData,
+        derivedCity: deriveCity(),
+        subtotal,
+        transport,
+        total,
+        ordersEnabled,
+        ordersSource,
+        scheduleNotes,
+      })
+    );
   };
 
-  // Show loading skeleton while checking for items
-  if (isLoading) {
-    return <CheckoutSkeleton />;
-  }
+  // EFFECTS
 
-  // Show empty cart message (but not in retry mode or while loading)
-  if (orderItems.length === 0 && !isRetryMode && !isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="text-center py-12">
-          <ShoppingCart className="h-16 w-16 sm:h-24 sm:w-24 text-muted-foreground mx-auto mb-4 sm:mb-6" />
-          <h1 className="text-xl sm:text-3xl font-bold mb-3 sm:mb-4 px-2">
-            {t('checkout.cartEmptyTitle')}
-          </h1>
-          <p className="text-muted-foreground mb-6 sm:mb-8 px-4 text-sm sm:text-base">
-            {t('checkout.cartEmptyInfo')}
-          </p>
-          <Button
-            onClick={() => router.push('/')}
-            className="bg-orange-500 hover:bg-orange-600 text-white text-sm sm:text-base"
-          >
-            {t('checkout.continueShopping')}
-          </Button>
-        </div>
-      </div>
+  // Load temp address for guests
+  useEffect(() => {
+    addressHandlers.loadTempAddress();
+  }, [isLoggedIn]);
+
+  // Auto-fill city
+  useEffect(() => {
+    const addr = (
+      addressHandlers.effectiveAddress?.street ||
+      formData.address ||
+      ''
+    ).trim();
+    if (!addr || formData.city?.trim()) return;
+    const parts = addr
+      .split(',')
+      .map((p: string) => p.trim())
+      .filter(Boolean);
+    if (parts.length >= 2) {
+      setFormData(prev => ({ ...prev, city: parts[parts.length - 2] }));
+    } else if (/kigali/i.test(addr)) {
+      setFormData(prev => ({ ...prev, city: 'Kigali' }));
+    }
+  }, [formData.address, addressHandlers.effectiveAddress]);
+
+  // Restore persisted state
+  useEffect(() => {
+    const persisted = loadCheckoutFromStorage();
+    if (!persisted || effectiveIsRetry) return;
+    if (persisted.formData) {
+      const incoming = { ...persisted.formData } as any;
+      if (!incoming.fullName && (incoming.firstName || incoming.lastName)) {
+        incoming.fullName =
+          `${incoming.firstName || ''} ${incoming.lastName || ''}`.trim();
+      }
+      setFormData(prev => ({ ...prev, ...incoming }));
+    }
+    if (persisted.paymentMethod)
+      payment.setPaymentMethod(persisted.paymentMethod as any);
+    if (persisted.mobileMoneyPhones)
+      payment.setMobileMoneyPhones(persisted.mobileMoneyPhones);
+    if (!orderItems.length && persisted.cart) setOrderItems(persisted.cart);
+  }, []);
+
+  // Persist state
+  useEffect(() => {
+    if (preventPersistenceRef.current) return;
+    const id = setTimeout(
+      () =>
+        saveCheckoutToStorage({
+          formData,
+          paymentMethod: payment.paymentMethod,
+          mobileMoneyPhones: payment.mobileMoneyPhones,
+          cart: orderItems,
+          isBuyNowFlow,
+        }),
+      250
     );
-  }
+    return () => clearTimeout(id);
+  }, [
+    formData,
+    payment.paymentMethod,
+    payment.mobileMoneyPhones,
+    orderItems,
+    isBuyNowFlow,
+  ]);
+
+  // KPay return detection
+  useEffect(() => {
+    if (payment.paymentModalOpen) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const kpayRef = urlParams.get('refid') || urlParams.get('reference');
+    const kpayTid = urlParams.get('tid') || urlParams.get('transactionId');
+    const paymentReturn = urlParams.get('payment') === 'return';
+    if (
+      (kpayRef || kpayTid || paymentReturn) &&
+      (urlParams.get('reference') || kpayRef)
+    ) {
+      const ref =
+        urlParams.get('reference') ||
+        kpayRef ||
+        sessionStorage.getItem('kpay_reference');
+      if (ref && ref !== 'null' && ref !== 'undefined') {
+        payment.setPaymentReference(ref);
+        payment.setPaymentModalOpen(true);
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [payment.paymentModalOpen]);
+
+  // Payment success return
+  useEffect(() => {
+    const p =
+      searchParams?.get('payment') ||
+      new URLSearchParams(window.location.search).get('payment');
+    const oid =
+      searchParams?.get('orderId') ||
+      new URLSearchParams(window.location.search).get('orderId');
+    if (p === 'success' && oid) {
+      (async () => {
+        const resp = await fetch(`/api/payments/order/${oid}`);
+        if (!resp.ok) {
+          payment.setPaymentVerified(false);
+          return;
+        }
+        const payments = await resp.json();
+        const ok =
+          Array.isArray(payments) &&
+          payments.some(
+            (x: any) => x.status === 'completed' || x.status === 'successful'
+          );
+        payment.setPaymentVerified(!!ok);
+        if (ok) {
+          toast.success('Payment completed successfully.');
+          payment.setPaymentFailure(null);
+          clearCheckoutStorage();
+        } else {
+          toast.error('Payment returned but not verified.');
+          payment.setPaymentFailure({ kind: 'not_found' });
+        }
+      })();
+    }
+    if (p === 'success' && !oid) {
+      toast.success('Payment completed.');
+      payment.setPaymentVerified(true);
+    }
+  }, [searchParams]);
+
+  // Cart sync
+  useEffect(() => {
+    if (effectiveIsRetry) {
+      const persisted = loadCheckoutFromStorage();
+      if (persisted?.cart) setOrderItems(persisted.cart);
+      if (persisted?.formData)
+        setFormData(prev => ({ ...prev, ...persisted.formData }));
+      payment.setPaymentMethod('');
+      payment.setMobileMoneyPhones({});
+      clearCheckoutStorage();
+      if (effectiveRetryOrderId) {
+        (async () => {
+          const resp = await fetch(
+            `/api/payments/order/${effectiveRetryOrderId}`
+          );
+          if (resp.ok) {
+            const payments = await resp.json();
+            const failed = payments
+              ?.filter((x: any) =>
+                ['failed', 'cancelled', 'timeout'].includes(x.status)
+              )
+              .sort(
+                (a: any, b: any) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime()
+              )[0];
+            if (failed) payment.setPreviousPaymentMethod(failed.payment_method);
+          }
+        })();
+      }
+      return;
+    }
+    if (Array.isArray(cartItems)) {
+      setOrderItems(
+        cartItems.map((item: any) => ({
+          ...item,
+          id: String(item.id).replace(/-$/, ''),
+          variation_id: String(
+            item.product_variation_id || item.variation_id || ''
+          ).replace(/-$/, ''),
+        }))
+      );
+      setIsBuyNowFlow(false);
+    }
+    if (user && !effectiveIsRetry)
+      setFormData(prev => ({
+        ...prev,
+        email: user.email || '',
+        fullName: user.user_metadata?.full_name || '',
+      }));
+  }, [cartItems, user, effectiveIsRetry, effectiveRetryOrderId]);
+
+  // Buy-now sync
+  useEffect(() => {
+    if (buyNowItem) {
+      setOrderItems([
+        {
+          id: buyNowItem.id,
+          product_id: buyNowItem.product_id,
+          name: buyNowItem.name,
+          price: buyNowItem.price,
+          quantity: buyNowItem.quantity || 1,
+          variation_name: buyNowItem.variant,
+          image: buyNowItem.image,
+        } as any,
+      ]);
+      setIsBuyNowFlow(true);
+    } else if (cartItems?.length) {
+      setOrderItems(
+        cartItems.map((item: any) => ({
+          ...item,
+          id: String(item.id).replace(/-$/, ''),
+        }))
+      );
+      setIsBuyNowFlow(false);
+    }
+    setIsLoading(false);
+  }, [buyNowItem, cartItems]);
+
+  // Auto-select address
+  useEffect(() => {
+    if (!savedAddresses?.length || selectedAddress) return;
+    if (
+      localStorage.getItem('nihemart_explicit_unselect_address_v1') === 'true'
+    )
+      return;
+    const pick =
+      savedAddresses.find((a: any) => a.is_default) || savedAddresses[0];
+    if (pick) {
+      selectAddress(pick.id);
+      setFormData(prev => ({
+        ...prev,
+        address: pick.display_name || prev.address,
+        city: pick.city || prev.city,
+        phone: pick.phone || prev.phone,
+      }));
+      const sector = sectors.find((s: any) =>
+        [pick.street, pick.display_name, pick.city].includes(s.sct_name)
+      );
+      if (sector) {
+        setSelectedSector(sector.sct_id);
+        setSelectedDistrict(sector.sct_district);
+        const dist = districts.find(
+          (d: any) => d.dst_id === sector.sct_district
+        );
+        if (dist) setSelectedProvince(dist.dst_province);
+      }
+    }
+  }, [savedAddresses, selectedAddress, sectors, districts]);
+
+  // Empty cart redirect
+  useEffect(() => {
+    if (
+      orderItems.length === 0 &&
+      !isRetryMode &&
+      !payment.isSubmitting &&
+      !isInitiating &&
+      !payment.paymentInProgress &&
+      !payment.suppressEmptyCartRedirect
+    ) {
+      const timer = setTimeout(() => router.push('/'), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    orderItems.length,
+    isRetryMode,
+    payment.isSubmitting,
+    isInitiating,
+    payment.paymentInProgress,
+    payment.suppressEmptyCartRedirect,
+  ]);
+
+  // RENDER
+
+  if (isLoading) return <CheckoutSkeleton />;
+  if (orderItems.length === 0 && !isRetryMode)
+    return <EmptyCartView t={t} onContinueShopping={() => router.push('/')} />;
 
   return (
     <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8 max-w-[90vw]">
@@ -2145,487 +683,62 @@ Total: ${total.toLocaleString()} RWF
         missingSteps={missingSteps}
         t={t}
         isRetryMode={isRetryMode}
-        previousPaymentMethod={previousPaymentMethod}
+        previousPaymentMethod={payment.previousPaymentMethod}
+      />
+      <FinalizingBanner isFinalizing={payment.isFinalizing} />
+      <RetryBanner
+        isRetryMode={isRetryMode}
+        total={total}
+        previousPaymentMethod={payment.previousPaymentMethod}
+        loadCheckoutFromStorage={loadCheckoutFromStorage}
       />
 
-      {/* Payment failure banner removed - redundant in retry mode */}
-
-      {/* Finalizing banner shown while attempting to finalize a returned session */}
-      {isFinalizing && (
-        <div className="sticky top-16 z-40 mb-4">
-          <div className="mx-auto max-w-[90vw] sm:max-w-7xl px-2 sm:px-0">
-            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 shadow-sm">
-              <div className="flex items-center gap-3">
-                <Loader2 className="animate-spin h-4 w-4" />
-                <div className="text-sm">
-                  Finalizing payment, please wait...
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Retry mode banner with previous payment method info */}
-      {isRetryMode && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-blue-600 mr-3" />
-            <div className="flex-1">
-              <p className="text-sm font-medium text-blue-900">Retry Payment</p>
-              <p className="text-xs text-blue-700 mt-1">
-                Previous payment failed or timed out. Choose a different payment
-                method below. Your cart and delivery details were restored from
-                your browser.
-              </p>
-              <div className="mt-2 text-xs text-blue-800 space-y-1">
-                <div>Amount: RWF {Number(total).toLocaleString()}</div>
-                {(() => {
-                  const persisted = loadCheckoutFromStorage();
-                  const oldMethod = persisted?.paymentMethod;
-                  if (oldMethod) {
-                    const methodName =
-                      oldMethod === 'mtn_momo'
-                        ? 'MTN Mobile Money'
-                        : oldMethod === 'airtel_money'
-                          ? 'Airtel Money'
-                          : oldMethod === 'visa_card'
-                            ? 'Visa Card'
-                            : oldMethod === 'mastercard'
-                              ? 'MasterCard'
-                              : oldMethod === 'cash_on_delivery'
-                                ? 'Cash on Delivery'
-                                : oldMethod;
-                    return (
-                      <div className="flex items-center gap-2">
-                        <span>Previous method:</span>
-                        <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded font-medium">
-                          {methodName}
-                        </span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Retry timeout banner removed - redundant, user already knows */}
-
-      {/* Loading existing order */}
-      {/* No server-side order loading in retry mode; state is restored from localStorage */}
-
       <div className="grid lg:grid-cols-2 gap-6 sm:gap-8">
-        {/* Left Column - Forms */}
         <div className="space-y-5 sm:space-y-7">
-          {/* Add delivery address section */}
-          <div className="space-y-4 sm:space-y-5 border border-gray-200 rounded-xl p-4 sm:p-5 bg-gradient-to-b from-gray-50 to-white shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-              <div className="flex items-center space-x-2 sm:space-x-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                </div>
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900">
-                  {t('checkout.addDeliveryAddress')}
-                </h2>
-              </div>
-              {isLoggedIn ? (
-                <Button
-                  onClick={() => {
-                    setAddNewOpen(true);
-                    setAddressOpen(false);
-                    setSelectedProvince(null);
-                    setSelectedDistrict(null);
-                    setSelectedSector(null);
-                    setHouseNumber('');
-                    setPhoneInput('');
-                    setEditingAddressId(null);
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="border-orange-300 text-orange-600 hover:bg-orange-50 hover:border-orange-400 w-full sm:w-auto text-xs sm:text-sm"
-                >
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  {t('checkout.addNewAddress')}
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => {
-                    setAddNewOpen(true);
-                    setAddressOpen(false);
-                    setSelectedProvince(null);
-                    setSelectedDistrict(null);
-                    setSelectedSector(null);
-                    setHouseNumber('');
-                    setPhoneInput('');
-                    setEditingAddressId(null);
-                  }}
-                  size="sm"
-                  variant="outline"
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50 w-full sm:w-auto text-xs sm:text-sm"
-                >
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  {t('checkout.addAddress')}
-                </Button>
-              )}
+          <AddressSection
+            t={t}
+            isLoggedIn={isLoggedIn}
+            addNewOpen={addNewOpen}
+            setAddNewOpen={setAddNewOpen}
+            addressOpen={addressOpen}
+            setAddressOpen={setAddressOpen}
+            savedAddresses={savedAddresses || []}
+            tempCheckoutAddress={addressHandlers.tempCheckoutAddress}
+            effectiveAddress={addressHandlers.effectiveAddress}
+            selectedAddress={selectedAddress}
+            provinces={provinces}
+            districts={districts}
+            sectors={sectors}
+            selectedProvince={selectedProvince}
+            setSelectedProvince={setSelectedProvince}
+            selectedDistrict={selectedDistrict}
+            setSelectedDistrict={setSelectedDistrict}
+            selectedSector={selectedSector}
+            setSelectedSector={setSelectedSector}
+            houseNumber={addressHandlers.houseNumber}
+            setHouseNumber={addressHandlers.setHouseNumber}
+            phoneInput={addressHandlers.phoneInput}
+            setPhoneInput={addressHandlers.setPhoneInput}
+            editingAddressId={addressHandlers.editingAddressId}
+            setEditingAddressId={addressHandlers.setEditingAddressId}
+            selectAddress={selectAddress}
+            saveAddress={saveAddress}
+            updateAddress={updateAddress}
+            reloadSaved={reloadSaved}
+            setFormData={setFormData}
+            setTempCheckoutAddress={addressHandlers.setTempCheckoutAddress}
+            handleUseAddressDirectly={addressHandlers.handleUseAddressDirectly}
+            handleUpdateTempAddress={addressHandlers.handleUpdateTempAddress}
+            handleEditAddressInCheckout={
+              addressHandlers.handleEditAddressInCheckout
+            }
+            handleDeleteAddressInCheckout={
+              addressHandlers.handleDeleteAddressInCheckout
+            }
+            onNavigateToAddresses={() => router.push('/addresses')}
+            onNextStep={() => setAddressOpen(false)}
+          />
 
-              {/* Guest details form removed from address header; shown below payment section for guests only */}
-            </div>
-
-            {/* Add New Address (collapsible) */}
-            <Collapsible open={addNewOpen} onOpenChange={setAddNewOpen}>
-              <CollapsibleTrigger asChild>
-                <div className="mt-2"></div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3 sm:mt-4">
-                <CheckoutAddressForm
-                  provinces={provinces}
-                  districts={districts}
-                  sectors={sectors}
-                  selectedProvince={selectedProvince}
-                  setSelectedProvince={setSelectedProvince}
-                  selectedDistrict={selectedDistrict}
-                  setSelectedDistrict={setSelectedDistrict}
-                  selectedSector={selectedSector}
-                  setSelectedSector={setSelectedSector}
-                  houseNumber={houseNumber}
-                  setHouseNumber={setHouseNumber}
-                  phoneInput={phoneInput}
-                  setPhoneInput={setPhoneInput}
-                  editingAddressId={editingAddressId}
-                  setEditingAddressId={setEditingAddressId}
-                  saveAddress={saveAddress}
-                  updateAddress={updateAddress}
-                  reloadSaved={reloadSaved}
-                  setAddNewOpen={setAddNewOpen}
-                  setAddressOpen={setAddressOpen}
-                  // Guests: Use temp address without DB save
-                  // Logged-in: Always save to DB
-                  onUseDirectly={
-                    !isLoggedIn ? handleUseAddressDirectly : undefined
-                  }
-                  onUpdateTempAddress={
-                    !isLoggedIn ? handleUpdateTempAddress : undefined
-                  }
-                  isLoggedIn={isLoggedIn}
-                  t={t}
-                />
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Select delivery address */}
-            <Collapsible open={addressOpen} onOpenChange={setAddressOpen}>
-              <CollapsibleTrigger asChild>
-                <button className="w-full text-left p-3 sm:p-3.5 flex items-center justify-between text-gray-700 hover:text-orange-600 hover:bg-orange-50/50 transition-all rounded-lg border border-gray-200 bg-white">
-                  <span className="text-xs sm:text-sm font-medium">
-                    {t('checkout.selectDeliveryAddress')}
-                  </span>
-                  {addressOpen ? (
-                    <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 transition-transform" />
-                  )}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-3 sm:mt-4">
-                <div className="border border-gray-200 rounded-lg p-3 sm:p-4 bg-gray-50">
-                  {(() => {
-                    // Combine saved addresses with temp address
-                    const allAddresses = [];
-
-                    // Add temp address first if it exists
-                    if (tempCheckoutAddress) {
-                      allAddresses.push(tempCheckoutAddress);
-                    }
-
-                    // Add saved addresses
-                    if (savedAddresses && savedAddresses.length > 0) {
-                      allAddresses.push(...savedAddresses);
-                    }
-
-                    return allAddresses.length > 0 ? (
-                      <div className="space-y-2 sm:space-y-3">
-                        {allAddresses.map(addr => (
-                          <div
-                            key={addr.id}
-                            role="button"
-                            tabIndex={0}
-                            onClick={e => {
-                              // Don't select if clicking on action buttons
-                              if ((e.target as HTMLElement).closest('button')) {
-                                return;
-                              }
-
-                              // If address is already selected, unselect it
-                              if (
-                                !addr._isTemp &&
-                                selectedAddress?.id === addr.id
-                              ) {
-                                selectAddress(null);
-                                setAddressOpen(false);
-                                toast.success('Address unselected');
-                                return;
-                              }
-
-                              // Handle temp address differently
-                              if (addr._isTemp) {
-                                // Just select it, don't clear it
-                                setFormData(prev => ({
-                                  ...prev,
-                                  address:
-                                    addr.street || addr.display_name || '',
-                                  city: addr.city || '',
-                                  phone: addr.phone || '',
-                                }));
-                                setAddressOpen(false);
-                                toast.success('Address selected');
-                                return;
-                              }
-
-                              // Clear temp address when selecting a saved one
-                              setTempCheckoutAddress(null);
-                              try {
-                                localStorage.removeItem(
-                                  'checkout_temp_address'
-                                );
-                              } catch (_error) {
-                                console.error(
-                                  'Error clearing temp address:',
-                                  _error
-                                );
-                              }
-
-                              selectAddress(addr.id);
-                              const foundSector = sectors.find(
-                                s =>
-                                  s.sct_name === addr.street ||
-                                  s.sct_name === addr.display_name ||
-                                  s.sct_name === addr.city
-                              );
-                              if (foundSector) {
-                                setSelectedSector(foundSector.sct_id);
-                                setSelectedDistrict(foundSector.sct_district);
-                                const foundDistrict = districts.find(
-                                  d => d.dst_id === foundSector.sct_district
-                                );
-                                if (foundDistrict)
-                                  setSelectedProvince(
-                                    foundDistrict.dst_province
-                                  );
-                              }
-                              const streetOrName =
-                                addr.street ?? addr.display_name ?? '';
-                              const firstSegment =
-                                streetOrName
-                                  .split(',')
-                                  .map((p: string) => p.trim())
-                                  .filter(Boolean)[0] || streetOrName;
-                              setFormData(prev => ({
-                                ...prev,
-                                address: firstSegment || prev.address,
-                                city: addr.city ?? prev.city,
-                                phone: addr.phone ?? prev.phone,
-                              }));
-
-                              // Close the address selection
-                              setAddressOpen(false);
-                              toast.success('Address selected');
-                            }}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') {
-                                // Handle temp address differently
-                                if (addr._isTemp) {
-                                  setFormData(prev => ({
-                                    ...prev,
-                                    address:
-                                      addr.street || addr.display_name || '',
-                                    city: addr.city || '',
-                                    phone: addr.phone || '',
-                                  }));
-                                  setAddressOpen(false);
-                                  toast.success('Address selected');
-                                  return;
-                                }
-
-                                // Clear temp address when selecting a saved one
-                                setTempCheckoutAddress(null);
-                                try {
-                                  localStorage.removeItem(
-                                    'checkout_temp_address'
-                                  );
-                                } catch (_error) {
-                                  console.error(
-                                    'Error clearing temp address:',
-                                    _error
-                                  );
-                                }
-
-                                selectAddress(addr.id);
-                                const foundSector = sectors.find(
-                                  s =>
-                                    s.sct_name === addr.street ||
-                                    s.sct_name === addr.display_name ||
-                                    s.sct_name === addr.city
-                                );
-                                if (foundSector) {
-                                  setSelectedSector(foundSector.sct_id);
-                                  setSelectedDistrict(foundSector.sct_district);
-                                  const foundDistrict = districts.find(
-                                    d => d.dst_id === foundSector.sct_district
-                                  );
-                                  if (foundDistrict)
-                                    setSelectedProvince(
-                                      foundDistrict.dst_province
-                                    );
-                                }
-                                const streetOrName =
-                                  addr.street ?? addr.display_name ?? '';
-                                const firstSegment =
-                                  streetOrName
-                                    .split(',')
-                                    .map((p: string) => p.trim())
-                                    .filter(Boolean)[0] || streetOrName;
-
-                                setFormData(prev => ({
-                                  ...prev,
-                                  address: firstSegment || prev.address,
-                                  city: addr.city ?? prev.city,
-                                  phone: addr.phone ?? prev.phone,
-                                }));
-
-                                // Close the address selection
-                                setAddressOpen(false);
-                                toast.success('Address selected');
-                              }
-                            }}
-                            className={`p-3 sm:p-4 rounded-lg cursor-pointer transition-all duration-200 border-2 bg-white hover:border-orange-300 hover:shadow-sm ${
-                              effectiveAddress?.id === addr.id ||
-                              (addr._isTemp && effectiveAddress?._isTemp)
-                                ? 'border-orange-400 bg-orange-50 shadow-sm'
-                                : 'border-gray-200'
-                            }`}
-                          >
-                            <div className="flex items-start">
-                              <div className="flex items-center mr-2 sm:mr-3 mt-0.5">
-                                <div
-                                  className={`h-3 w-3 sm:h-4 sm:w-4 rounded-full border-2 flex items-center justify-center transition-colors ${
-                                    effectiveAddress?.id === addr.id ||
-                                    (addr._isTemp && effectiveAddress?._isTemp)
-                                      ? 'bg-orange-500 border-orange-500'
-                                      : 'border-gray-300'
-                                  }`}
-                                >
-                                  {(effectiveAddress?.id === addr.id ||
-                                    (addr._isTemp &&
-                                      effectiveAddress?._isTemp)) && (
-                                    <div className="h-1 w-1 sm:h-2 sm:w-2 bg-white rounded-full" />
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                  <p className="font-medium text-xs sm:text-sm text-gray-800 truncate">
-                                    {addr.display_name}
-                                  </p>
-                                  {addr._isTemp && (
-                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium flex-shrink-0">
-                                      {t('checkout.tempAddress') || 'Temporary'}
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-600 mt-0.5">
-                                  {addr.city}
-                                </p>
-                                {addr.phone && (
-                                  <p className="text-xs text-orange-600 mt-1">
-                                    {t('checkout.contactPhoneLabel')}{' '}
-                                    {addr.phone}
-                                  </p>
-                                )}
-                              </div>
-                              {/* Edit and Delete buttons */}
-                              <div className="flex items-center gap-1 ml-2">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 hover:bg-gray-100"
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    handleEditAddressInCheckout(addr);
-                                  }}
-                                  title="Edit address"
-                                >
-                                  <Edit3 className="h-3 w-3 text-gray-600" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 hover:bg-red-50"
-                                  onClick={e =>
-                                    handleDeleteAddressInCheckout(addr, e)
-                                  }
-                                  title={
-                                    addr._isTemp
-                                      ? 'Remove temporary address'
-                                      : 'Delete address'
-                                  }
-                                >
-                                  <Trash2 className="h-3 w-3 text-red-600" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                        <div className="flex flex-col sm:flex-row justify-between pt-3 sm:pt-4 gap-2 sm:gap-0">
-                          {isLoggedIn && (
-                            <Button
-                              variant="outline"
-                              className="border-orange-300 text-orange-600 hover:bg-orange-50 text-xs sm:text-sm h-9 sm:h-10"
-                              onClick={() => router.push('/addresses')}
-                            >
-                              Manage Addresses
-                            </Button>
-                          )}
-                          <Button
-                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 text-xs sm:text-sm h-9 sm:h-10"
-                            onClick={() => {
-                              setAddressOpen(false);
-                              setInstructionsOpen(true);
-                            }}
-                          >
-                            {t('common.next')}
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
-                        <div className="flex items-start gap-2">
-                          <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs sm:text-sm font-semibold text-orange-900">
-                              {t('checkout.noSavedAddresses') ||
-                                'No saved addresses'}
-                            </p>
-                            <p className="text-xs text-orange-700 mt-1">
-                              Please add a delivery address above to continue
-                              with your order.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-
-          {/* Guest details (for unauthenticated users) - displayed explicitly without collapsible */}
           {!isLoggedIn && (
             <div className="space-y-4 sm:space-y-5 border border-gray-200 rounded-xl p-4 sm:p-5 bg-gradient-to-b from-blue-50 to-white shadow-sm">
               <GuestCheckoutForm
@@ -2638,44 +751,14 @@ Total: ${total.toLocaleString()} RWF
             </div>
           )}
 
-          {/* Delivery instructions section - simplified, no collapse/expand required */}
-          <div className="space-y-4 sm:space-y-5 border border-gray-200 rounded-xl p-4 sm:p-5 bg-gradient-to-b from-gray-50 to-white shadow-sm">
-            <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Package className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-              </div>
-              <span className="text-base sm:text-lg font-semibold text-gray-900">
-                {t('checkout.deliveryInstructions')}
-              </span>
-              <span className="text-xs text-gray-500">
-                ({t('common.optional') || 'Optional'})
-              </span>
-            </div>
-            <div>
-              <textarea
-                id="delivery_notes"
-                rows={3}
-                placeholder={
-                  t('checkout.writeDeliveryInstructions') ||
-                  'Enter any special delivery instructions...'
-                }
-                value={formData.delivery_notes || ''}
-                onChange={e =>
-                  setFormData(prev => ({
-                    ...prev,
-                    delivery_notes: e.target.value,
-                  }))
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none transition-colors text-xs sm:text-sm"
-              />
-              <p className="mt-2 text-xs text-gray-500">
-                {t('checkout.deliveryInstructionsHelper') ||
-                  'Add any special instructions for delivery (e.g., landmarks, preferred time)'}
-              </p>
-            </div>
-          </div>
+          <DeliveryInstructionsSection
+            t={t}
+            deliveryNotes={formData.delivery_notes || ''}
+            onDeliveryNotesChange={notes =>
+              setFormData(prev => ({ ...prev, delivery_notes: notes }))
+            }
+          />
 
-          {/* Payment Method section - Hidden for WhatsApp-only locations (izo mu ntara) */}
           {!isExplicitNonKigaliLocation && (
             <div className="space-y-4 sm:space-y-5 border border-gray-200 rounded-xl p-4 sm:p-5 bg-gradient-to-b from-gray-50 to-white shadow-sm">
               <Collapsible open={paymentOpen} onOpenChange={setPaymentOpen}>
@@ -2690,19 +773,21 @@ Total: ${total.toLocaleString()} RWF
                       </span>
                     </div>
                     {paymentOpen ? (
-                      <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 transition-transform text-gray-500" />
+                      <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
                     ) : (
-                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 flex-shrink-0 transition-transform text-gray-500" />
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500" />
                     )}
                   </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-4 sm:mt-5">
                   <PaymentSection
-                    paymentMethod={paymentMethod}
-                    setPaymentMethod={setPaymentMethod}
-                    handleMobileMoneyPhoneChange={handleMobileMoneyPhoneChange}
-                    mobileMoneyPhones={mobileMoneyPhones}
-                    disabled={isSubmitting || isInitiating}
+                    paymentMethod={payment.paymentMethod}
+                    setPaymentMethod={payment.setPaymentMethod}
+                    handleMobileMoneyPhoneChange={
+                      payment.handleMobileMoneyPhoneChange
+                    }
+                    mobileMoneyPhones={payment.mobileMoneyPhones}
+                    disabled={payment.isSubmitting || isInitiating}
                   />
                 </CollapsibleContent>
               </Collapsible>
@@ -2710,7 +795,6 @@ Total: ${total.toLocaleString()} RWF
           )}
         </div>
 
-        {/* Order Summary - Right Side */}
         <div className="lg:sticky lg:top-4">
           <Card className="border border-gray-200 shadow-sm w-full max-w-full overflow-hidden">
             <CardHeader className="pb-3 sm:pb-4">
@@ -2722,134 +806,57 @@ Total: ${total.toLocaleString()} RWF
               <OrderItemsList
                 orderItems={orderItems}
                 onRemove={it => {
-                  try {
-                    if (isBuyNowFlow) {
-                      // clearing buy-now session and return user
-                      clearBuyNowItem();
-                      setOrderItems([]);
-                      // navigate back to product page if possible
-                      const pid = (it as any).product_id || (it as any).id;
-                      if (pid) {
-                        router.push(`/products/${pid}`);
-                      } else {
-                        router.push(`/`);
-                      }
-                    } else {
-                      // remove from main cart and update view
-                      if ((it as any).id) {
-                        removeItem((it as any).id);
-                      }
-                      // update local list immediately
-                      setOrderItems(prev => prev.filter(x => x.id !== it.id));
-                    }
-                  } catch (_e) {
-                    console.error('Failed to remove checkout item:', _e);
+                  if (isBuyNowFlow) {
+                    clearBuyNowItem();
+                    setOrderItems([]);
+                    router.push(
+                      (it as any).product_id
+                        ? `/products/${(it as any).product_id}`
+                        : '/'
+                    );
+                  } else {
+                    removeItem((it as any).id);
+                    setOrderItems(prev => prev.filter(x => x.id !== it.id));
                   }
                 }}
               />
-
               <Separator className="my-3 sm:my-4" />
-
               <PriceSummary
                 subtotal={subtotal}
                 transport={transport}
                 total={total}
                 t={t}
               />
-
-              {/* Delivery Address & Order Buttons */}
               <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-4">
-                {selectedAddress && (
-                  <div className="border-2 border-orange-200 p-3 sm:p-4 rounded-lg bg-gradient-to-r from-orange-50 to-white shadow-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start min-w-0 flex-1">
-                        <div className="mr-2 sm:mr-3 mt-0.5 flex-shrink-0">
-                          <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">
-                            {t('checkout.deliveringTo')}
-                          </p>
-                          <p className="text-xs sm:text-sm font-semibold text-gray-800 break-words">
-                            {selectedAddress.display_name}
-                          </p>
-                          <p className="text-xs text-gray-600 break-words">
-                            {selectedAddress.city}
-                            {selectedAddress.phone
-                              ? ` • ${selectedAddress.phone}`
-                              : ''}
-                          </p>
-                        </div>
-                      </div>
-                      {isLoggedIn && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setAddressOpen(true)}
-                          className="border-orange-300 text-orange-600 hover:bg-orange-50 flex-shrink-0 text-xs h-7 sm:h-9 whitespace-nowrap"
-                        >
-                          {t('common.edit')}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+                {addressHandlers.effectiveAddress && (
+                  <SelectedAddressCard
+                    t={t}
+                    selectedAddress={addressHandlers.effectiveAddress}
+                    isLoggedIn={isLoggedIn}
+                    onEdit={() => setAddressOpen(true)}
+                  />
                 )}
-
                 {ordersEnabled === false && ordersSource === 'schedule' && (
-                  <div className="mt-3 p-3 border rounded-md bg-yellow-50 border-yellow-200 space-y-3">
-                    <p className="text-sm text-yellow-900 font-medium">
-                      {t('checkout.ordersDisabledScheduleMessage')}
-                    </p>
-
-                    <label className="flex items-start gap-2">
-                      <Checkbox
-                        checked={scheduleConfirmChecked}
-                        onCheckedChange={(v: any) =>
-                          setScheduleConfirmChecked(Boolean(v))
-                        }
-                      />
-                      <span className="text-sm text-yellow-900">
-                        {t('checkout.scheduleConfirmLabel') ||
-                          'I agree this order can be delivered tomorrow during working hours (9:30am - 9:00pm).'}
-                      </span>
-                    </label>
-
-                    <div>
-                      <Label
-                        htmlFor="schedule_notes_inline"
-                        className="text-xs text-yellow-900"
-                      >
-                        {t('checkout.scheduleNotesLabel') || 'Notes'} (
-                        {t('common.optional') || 'Optional'})
-                      </Label>
-                      <textarea
-                        id="schedule_notes_inline"
-                        rows={3}
-                        value={scheduleNotes}
-                        onChange={e => setScheduleNotes(e.target.value)}
-                        placeholder={
-                          t('checkout.scheduleNotesPlaceholder') ||
-                          'Optional notes about delivery'
-                        }
-                        className="mt-1 w-full px-3 py-2 border border-yellow-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                      />
-                    </div>
-                  </div>
+                  <ScheduleConfirmation
+                    t={t}
+                    scheduleConfirmChecked={scheduleConfirmChecked}
+                    onScheduleConfirmChange={setScheduleConfirmChecked}
+                    scheduleNotes={scheduleNotes}
+                    onScheduleNotesChange={setScheduleNotes}
+                  />
                 )}
-
-                {/* Order buttons */}
                 <div className="pt-1">
                   <CheckoutFooter
                     isKigali={isKigali}
                     isExplicitNonKigaliLocation={isExplicitNonKigaliLocation}
                     isLoggedIn={isLoggedIn}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={payment.isSubmitting}
                     isInitiating={isInitiating}
                     hasItems={hasItems}
                     hasAddress={hasAddress}
                     hasEmail={hasEmail}
                     hasValidPhone={hasValidPhone}
-                    paymentMethod={paymentMethod}
+                    paymentMethod={payment.paymentMethod}
                     ordersEnabled={ordersEnabled}
                     ordersSource={ordersSource}
                     scheduleConfirmChecked={scheduleConfirmChecked}
@@ -2870,43 +877,22 @@ Total: ${total.toLocaleString()} RWF
         </div>
       </div>
 
-      {/* Payment Modal for unified checkout flow */}
-      {/* Use paymentReference as key to force complete remount when payment changes */}
-      {/* This ensures no error states from previous payments persist */}
       <PaymentModal
-        key={paymentReference || 'payment-modal'}
-        open={paymentModalOpen}
-        onOpenChange={setPaymentModalOpen}
-        paymentReference={paymentReference}
-        checkoutUrl={paymentCheckoutUrl}
-        onSuccess={handlePaymentSuccess}
-        onClose={handlePaymentModalClose}
+        key={payment.paymentReference || 'payment-modal'}
+        open={payment.paymentModalOpen}
+        onOpenChange={payment.setPaymentModalOpen}
+        paymentReference={payment.paymentReference}
+        checkoutUrl={payment.paymentCheckoutUrl}
+        onSuccess={payment.handlePaymentSuccess}
+        onClose={payment.handlePaymentModalClose}
       />
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Address</AlertDialogTitle>
-            <AlertDialogDescription>
-              {addressToDelete?._isTemp
-                ? 'Are you sure you want to remove this temporary address?'
-                : 'Are you sure you want to delete this address? This action cannot be undone.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setAddressToDelete(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteAddressDialog
+        open={addressHandlers.deleteConfirmOpen}
+        onOpenChange={addressHandlers.setDeleteConfirmOpen}
+        addressToDelete={addressHandlers.addressToDelete}
+        onConfirm={addressHandlers.handleConfirmDelete}
+        onCancel={() => addressHandlers.setAddressToDelete(null)}
+      />
     </div>
   );
 };

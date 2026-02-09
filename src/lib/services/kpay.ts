@@ -129,9 +129,9 @@ export class KPayService {
   private getAuthHeader(): string {
     // If username/password are missing, still build header but warn to aid diagnostics
     if (!this.config.username || !this.config.password) {
-      console.warn(
-        'KPay: missing username or password in configuration. Check environment variables.'
-      );
+      // console.warn(
+      //   'KPay: missing username or password in configuration. Check environment variables.'
+      // );
     }
 
     const credentials = Buffer.from(
@@ -151,7 +151,7 @@ export class KPayService {
 
     // Enhanced logging for troubleshooting environment issues
     try {
-      const maskedUser = this.config.username
+      const _maskedUser = this.config.username
         ? `${this.config.username
             .slice(0, Math.max(0, this.config.username.length - 2))
             .replace(/./g, '*')}${this.config.username.slice(
@@ -164,51 +164,51 @@ export class KPayService {
       const isSandboxUrl = url.includes('esicia.com');
 
       // Log with clear indicators
-      console.info('🔧 KPay Configuration:', {
-        environment: this.config.environment,
-        url,
-        username: maskedUser,
-        retailerId: this.config.retailerId
-          ? `${this.config.retailerId.slice(0, 2)}****`
-          : '<missing>',
-        isLiveEnvironment: isLiveEnv,
-        isUsingSandboxUrl: isSandboxUrl,
-        isUsingLiveUrl: isLiveUrl,
-      });
+      // console.info('🔧 KPay Configuration:', {
+      //   environment: this.config.environment,
+      //   url,
+      //   username: maskedUser,
+      //   retailerId: this.config.retailerId
+      //     ? `${this.config.retailerId.slice(0, 2)}****`
+      //     : '<missing>',
+      //   isLiveEnvironment: isLiveEnv,
+      //   isUsingSandboxUrl: isSandboxUrl,
+      //   isUsingLiveUrl: isLiveUrl,
+      // });
 
       // Critical warning if environment and URL don't match
       if (isLiveEnv && isSandboxUrl) {
-        console.error('🚨 CRITICAL CONFIGURATION ERROR 🚨');
-        console.error("Environment is set to 'live' but using SANDBOX URL!");
-        console.error(
-          'This means payments will NOT be processed in live mode!'
-        );
-        console.error('Current URL:', url);
-        console.error('Expected URL: https://pay.esicia.rw');
-        console.error(
-          'Check KPAYENVIRONMENT and KPAYLIVE_BASE_URL environment variables'
-        );
+        // console.error('🚨 CRITICAL CONFIGURATION ERROR 🚨');
+        // console.error("Environment is set to 'live' but using SANDBOX URL!");
+        // console.error(
+        //   'This means payments will NOT be processed in live mode!'
+        // );
+        // console.error('Current URL:', url);
+        // console.error('Expected URL: https://pay.esicia.rw');
+        // console.error(
+        //   'Check KPAYENVIRONMENT and KPAYLIVE_BASE_URL environment variables'
+        // );
       }
 
       if (!isLiveEnv && isLiveUrl) {
-        console.warn(
-          "⚠️ WARNING: Using LIVE URL but environment is set to 'sandbox'"
-        );
-        console.warn('This configuration may cause unexpected behavior');
+        // console.warn(
+        //   "⚠️ WARNING: Using LIVE URL but environment is set to 'sandbox'"
+        // );
+        // console.warn('This configuration may cause unexpected behavior');
       }
 
       // Log environment variable status
-      console.info('📋 Environment Variables Check:', {
-        KPAYENVIRONMENT:
-          process.env.KPAYENVIRONMENT || '<not set, defaulting to sandbox>',
-        KPAYLIVE_BASE_URL:
-          process.env.KPAYLIVE_BASE_URL || '<not set, using default>',
-        KPAYBASE_URL: process.env.KPAYBASE_URL || '<not set, using default>',
-        KPAYWEBHOOK_URL: process.env.KPAYWEBHOOK_URL || '<not set>',
-      });
+      // console.info('📋 Environment Variables Check:', {
+      //   KPAYENVIRONMENT:
+      //     process.env.KPAYENVIRONMENT || '<not set, defaulting to sandbox>',
+      //   KPAYLIVE_BASE_URL:
+      //     process.env.KPAYLIVE_BASE_URL || '<not set, using default>',
+      //   KPAYBASE_URL: process.env.KPAYBASE_URL || '<not set, using default>',
+      //   KPAYWEBHOOK_URL: process.env.KPAYWEBHOOK_URL || '<not set>',
+      // });
     } catch (_e) {
       // swallow logging errors but log the error itself
-      console.error('Error in KPay logging:', _e);
+      // console.error('Error in KPay logging:', _e);
     }
 
     return url;
@@ -254,14 +254,14 @@ export class KPayService {
     };
 
     // Debug log the exact request being sent to KPay
-    console.log('🔍 KPay payment request details:', {
-      msisdn: paymentRequest.msisdn,
-      bankid: paymentRequest.bankid,
-      pmethod: paymentRequest.pmethod,
-      amount: paymentRequest.amount,
-      refid: paymentRequest.refid,
-      customerNumber: paymentRequest.cnumber,
-    });
+    // console.log('🔍 KPay payment request details:', {
+    //   msisdn: paymentRequest.msisdn,
+    //   bankid: paymentRequest.bankid,
+    //   pmethod: paymentRequest.pmethod,
+    //   amount: paymentRequest.amount,
+    //   refid: paymentRequest.refid,
+    //   customerNumber: paymentRequest.cnumber,
+    // });
 
     try {
       const result: PaymentResponse = await this.requestWithRetries(
@@ -277,26 +277,26 @@ export class KPayService {
       );
 
       // Log the payment initiation with detailed request info
-      console.log('KPay payment initiated:', {
-        refid: params.orderReference,
-        paymentMethod: params.paymentMethod,
-        bankId: paymentConfig.bankId,
-        msisdn: params.customerPhone,
-        cnumber: params.customerNumber,
-        pmethod: paymentConfig.code,
-        tid: result.tid,
-        retcode: result.retcode,
-        success: result.success,
-      });
+      // console.log('KPay payment initiated:', {
+      //   refid: params.orderReference,
+      //   paymentMethod: params.paymentMethod,
+      //   bankId: paymentConfig.bankId,
+      //   msisdn: params.customerPhone,
+      //   cnumber: params.customerNumber,
+      //   pmethod: paymentConfig.code,
+      //   tid: result.tid,
+      //   retcode: result.retcode,
+      //   success: result.success,
+      // });
 
       return result;
     } catch (error) {
       // Provide richer error logging so production issues (bad credentials / wrong URL)
       // can be diagnosed without exposing secrets.
-      console.error('KPay payment initiation failed:', {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+      // console.error('KPay payment initiation failed:', {
+      //   message: error instanceof Error ? error.message : String(error),
+      //   stack: error instanceof Error ? error.stack : undefined,
+      // });
       // Rethrow a descriptive error so calling code can set payment failure reason
       throw new Error(
         error instanceof Error
@@ -336,16 +336,16 @@ export class KPayService {
         }
       );
 
-      console.log('KPay payment status checked:', {
-        tid: params.transactionId,
-        refid: params.orderReference,
-        statusid: result.statusid,
-        statusdesc: result.statusdesc,
-      });
+      // console.log('KPay payment status checked:', {
+      //   tid: params.transactionId,
+      //   refid: params.orderReference,
+      //   statusid: result.statusid,
+      //   statusdesc: result.statusdesc,
+      // });
 
       return result;
     } catch (_error) {
-      console.error('KPay payment status check failed:', _error);
+      // console.error('KPay payment status check failed:', _error);
       throw new Error('Failed to check payment status. Please try again.');
     }
   }
@@ -390,10 +390,10 @@ export class KPayService {
           } catch (_e) {
             textBody = `<unable to read response body: ${String(_e)}>`;
           }
-          console.error('KPay HTTP error response:', {
-            status: resp.status,
-            body: textBody,
-          });
+          // console.error('KPay HTTP error response:', {
+          //   status: resp.status,
+          //   body: textBody,
+          // });
           throw new Error(
             `HTTP error! status: ${resp.status} - body: ${textBody}`
           );
@@ -413,16 +413,16 @@ export class KPayService {
           err?.name === 'AbortError'
         );
 
-        console.warn(`KPay request attempt ${attempt} failed`, {
-          url,
-          error: err?.message || String(err),
-        });
+        // console.warn(`KPay request attempt ${attempt} failed`, {
+        //   url,
+        //   error: err?.message || String(err),
+        // });
 
         if (isDnsOrConnectError && alternate && alternate !== url) {
-          console.info(
-            'KPay: attempting alternate API URL due to network error',
-            { alternate }
-          );
+          // console.info(
+          //   'KPay: attempting alternate API URL due to network error',
+          //   { alternate }
+          // );
           url = alternate;
           // small backoff
           await new Promise(r => setTimeout(r, 250 * attempt));
@@ -586,19 +586,19 @@ export function initializeKPayService(): KPayService {
   };
 
   // Log initialization with clear environment indicator
-  console.info('🚀 Initializing KPay Service');
-  console.info('Environment Mode:', config.environment.toUpperCase());
+  // console.info('🚀 Initializing KPay Service');
+  // console.info('Environment Mode:', config.environment.toUpperCase());
 
   // Validate required configuration
   if (!config.username || !config.password || !config.retailerId) {
-    console.error('❌ KPay Initialization Failed - Missing credentials');
-    console.error('Check these environment variables:');
-    console.error('- KPAYUSERNAME:', config.username ? '✓ Set' : '✗ Missing');
-    console.error('- KPAYPASSWORD:', config.password ? '✓ Set' : '✗ Missing');
-    console.error(
-      '- KPAYRETAILER_ID:',
-      config.retailerId ? '✓ Set' : '✗ Missing'
-    );
+    // console.error('❌ KPay Initialization Failed - Missing credentials');
+    // console.error('Check these environment variables:');
+    // console.error('- KPAYUSERNAME:', config.username ? '✓ Set' : '✗ Missing');
+    // console.error('- KPAYPASSWORD:', config.password ? '✓ Set' : '✗ Missing');
+    // console.error(
+    //   '- KPAYRETAILER_ID:',
+    //   config.retailerId ? '✓ Set' : '✗ Missing'
+    // );
     throw new Error(
       'KPay configuration is incomplete. Please check your environment variables.'
     );
@@ -609,13 +609,13 @@ export function initializeKPayService(): KPayService {
     config.environment === 'sandbox' &&
     config.webhookUrl.includes('nihemart.rw')
   ) {
-    console.warn('⚠️ WARNING: Using SANDBOX mode with production webhook URL');
-    console.warn('If this is production, set KPAYENVIRONMENT=live');
+    // console.warn('⚠️ WARNING: Using SANDBOX mode with production webhook URL');
+    // console.warn('If this is production, set KPAYENVIRONMENT=live');
   }
 
   // Success message
-  console.info('✅ KPay Service initialized successfully');
-  console.info('Webhook URL:', config.webhookUrl);
+  // console.info('✅ KPay Service initialized successfully');
+  // console.info('Webhook URL:', config.webhookUrl);
 
   return new KPayService(config);
 }

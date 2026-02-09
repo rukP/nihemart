@@ -125,7 +125,7 @@ export function AssignRiderDialog({
       // close dialog
       onOpenChange(false);
     } catch (err: any) {
-      console.error('Failed to assign/reassign order:', err);
+      // console.error('Failed to assign/reassign order:', err);
       const msg =
         (err && err.error && (err.error.message || err.error)) ||
         err?.message ||

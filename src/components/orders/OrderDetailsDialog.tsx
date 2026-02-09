@@ -66,7 +66,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (_err) {
-      console.error('Failed to copy:', _err);
+      // console.error('Failed to copy:', _err);
     }
   };
 
@@ -260,7 +260,7 @@ export function OrderDetailsDialog({
           setRider(null);
         }
       } catch (_error) {
-        console.error('Failed to fetch rider:', _error);
+        // console.error('Failed to fetch rider:', _error);
         setRider(null);
       } finally {
         setRiderLoading(false);
@@ -365,7 +365,7 @@ export function OrderDetailsDialog({
                 }
               }
             } catch (_e) {
-              console.error(`Failed to fetch product ${id}:`, _e);
+              // console.error(`Failed to fetch product ${id}:`, _e);
               map[id] = null;
             }
           })
@@ -379,7 +379,7 @@ export function OrderDetailsDialog({
           }));
         }
       } catch (_e) {
-        console.error('Failed to load product images:', _e);
+        // console.error('Failed to load product images:', _e);
         if (mounted) {
           setProductImages({});
           setProductVariationNames({});
@@ -797,7 +797,7 @@ export function OrderDetailsDialog({
                                               item.id
                                             );
                                           } catch (_e) {
-                                            console.error(_e);
+                                            // console.error(_e);
                                           } finally {
                                             setLoadingItemId(null);
                                           }
@@ -1144,8 +1144,8 @@ export function OrderDetailsDialog({
                         await submitFeeAdjustment(fetchedRiderId);
                         return;
                       }
-                    } catch (fetchErr) {
-                      console.error('Failed to fetch rider ID:', fetchErr);
+                    } catch (_fetchErr) {
+                      // console.error('Failed to fetch rider ID:', fetchErr);
                     }
 
                     toast.error(

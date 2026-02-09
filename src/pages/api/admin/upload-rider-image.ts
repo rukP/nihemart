@@ -63,7 +63,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json({ url: result.url });
   } catch (err: any) {
-    console.error('upload-rider-image failed', err);
+    // console.error('upload-rider-image failed', err);
     return res.status(500).json({ error: err?.message || 'Failed' });
   }
 }

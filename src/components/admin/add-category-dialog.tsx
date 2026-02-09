@@ -126,7 +126,8 @@ export default function AddEditCategoryDialog({
         });
         setSubcategories(data);
       } catch (_error) {
-        console.error('Failed to load subcategories:', _error);
+        // console.error('Failed to load subcategories:', _error);
+        toast.error('Failed to load subcategories');
         setSubcategories([]);
       }
     }
@@ -162,7 +163,7 @@ export default function AddEditCategoryDialog({
       setIsAddingSubcategory(false);
       await loadSubcategories();
     } catch (_error) {
-      console.error('Failed to add subcategory:', _error);
+      // console.error('Failed to add subcategory:', _error);
       toast.error('Failed to add subcategory.');
     }
   };
@@ -181,7 +182,7 @@ export default function AddEditCategoryDialog({
       setEditingSubcategory(null);
       await loadSubcategories();
     } catch (_error) {
-      console.error('Failed to edit subcategory:', _error);
+      // console.error('Failed to edit subcategory:', _error);
       toast.error('Failed to edit subcategory.');
     }
   };
@@ -212,7 +213,7 @@ export default function AddEditCategoryDialog({
           : 'Category created successfully'
       );
     } catch (error: any) {
-      console.error('Failed to save category:', error);
+      // console.error('Failed to save category:', error);
       const errorMessage =
         error?.message ||
         error?.error ||
@@ -451,7 +452,7 @@ export default function AddEditCategoryDialog({
                     await loadSubcategories();
                     toast.success('Subcategory deleted');
                   } catch (_error) {
-                    console.error('Failed to delete subcategory:', _error);
+                    // console.error('Failed to delete subcategory:', _error);
                     toast.error('Failed to delete subcategory.');
                   }
                 }}

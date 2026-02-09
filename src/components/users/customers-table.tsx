@@ -290,7 +290,7 @@ export function CustomerTable() {
                     <Select
                       value={filters.sortBy || 'recent'}
                       onValueChange={v => {
-                        console.log('[CustomerTable] Sort changed to:', v);
+                        // console.log('[CustomerTable] Sort changed to:', v);
                         setSortBy(v as SortBy);
                       }}
                     >

@@ -94,7 +94,7 @@ export default function ProductClientPage({
           );
         }
       } catch (_error) {
-        console.warn('Failed to check orders enabled status', _error);
+        // console.warn('Failed to check orders enabled status', _error);
         // If check fails, prefer schedule-managed default (null)
         setAdminEnabled(null);
       }

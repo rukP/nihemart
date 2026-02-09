@@ -43,7 +43,7 @@ export default async function handler(
 
     res.status(200).json({ success: true });
   } catch (err: any) {
-    console.error('update-user-role failed', err);
+    // console.error('update-user-role failed', err);
     res.status(500).json({ error: err.message || 'Failed to update role' });
   }
 }

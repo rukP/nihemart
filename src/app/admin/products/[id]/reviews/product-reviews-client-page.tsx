@@ -57,7 +57,7 @@ export default function ProductReviewsClientPage({
       setReviews(prev => prev.filter(r => r.id !== reviewId));
       toast.success('Review deleted successfully.', { id: toastId });
     } catch (_error) {
-      console.error('Failed to delete review', _error);
+      // console.error('Failed to delete review', _error);
       toast.error('Failed to delete review.', { id: toastId });
     } finally {
       setIsDeleting(null);

@@ -43,10 +43,10 @@ const AdminSignupForm: FC<AdminSignupFormProps> = ({}) => {
         typeof window !== 'undefined' ? window.location.origin : '';
 
       // For signup, we redirect to /signin after OAuth completes
-      const callbackUrl = `${origin}/auth/callback`;
+      const _callbackUrl = `${origin}/auth/callback`;
 
-      console.log('Starting Google signup...');
-      console.log('- Callback URL:', callbackUrl);
+      // console.log('Starting Google signup...');
+      // console.log('- Callback URL:', callbackUrl);
 
       // Inform the user that we're redirecting them to Google
       try {
@@ -61,7 +61,7 @@ const AdminSignupForm: FC<AdminSignupFormProps> = ({}) => {
       // Redirect to Google OAuth
       window.location.href = url;
     } catch (err: any) {
-      console.error('Google sign-up failed:', err);
+      // console.error('Google sign-up failed:', err);
       toast.error(err?.message || t('auth.google.failed'));
       setGoogleLoading(false);
     }

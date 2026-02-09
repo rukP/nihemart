@@ -16,7 +16,7 @@ export default async function handler(
     const resp = await respondToAssignment(assignmentId, status);
     return res.status(200).json({ assignment: resp });
   } catch (err: any) {
-    console.error('respond-assignment failed', err);
+    // console.error('respond-assignment failed', err);
     // Map common custom errors to proper HTTP statuses
     if (err && err.code === 'ASSIGNMENTNOT_FOUND') {
       return res

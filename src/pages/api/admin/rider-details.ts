@@ -45,7 +45,7 @@ export default async function handler(
     const result = await response.json();
     res.status(200).json(result);
   } catch (error: any) {
-    console.error('Error getting rider details:', error);
+    // console.error('Error getting rider details:', error);
     res.status(500).json({
       error: 'Failed to get rider details',
       details:

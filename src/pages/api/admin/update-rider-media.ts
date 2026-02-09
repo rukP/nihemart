@@ -49,7 +49,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json({ rider: result });
   } catch (err: any) {
-    console.error('update-rider-media failed', err);
+    // console.error('update-rider-media failed', err);
     return res.status(500).json({ error: err?.message || 'Failed' });
   }
 }

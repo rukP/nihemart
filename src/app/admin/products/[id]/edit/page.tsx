@@ -25,11 +25,11 @@ export default function EditProductPage({
         setError(null);
         const productData = await fetchProductForEdit(id);
 
-        console.log('[EditProductPage] Fetched product data:', productData);
+        // console.log('[EditProductPage] Fetched product data:', productData);
 
         // FIXED: Check for product data structure - backend returns { product, mainImages, variations, categoryIds, subcategoryIds }
         if (!productData) {
-          console.error('[EditProductPage] No product data returned');
+          // console.error('[EditProductPage] No product data returned');
           setError('Product not found');
           setLoading(false);
           return;
@@ -39,7 +39,7 @@ export default function EditProductPage({
         const product = productData.product || productData;
 
         if (!product || !product.id) {
-          console.error('[EditProductPage] Invalid product data:', product);
+          // console.error('[EditProductPage] Invalid product data:', product);
           setError('Invalid product data');
           setLoading(false);
           return;
@@ -81,10 +81,10 @@ export default function EditProductPage({
           variations: productData.variations || [],
         };
 
-        console.log('[EditProductPage] Formatted data:', formattedData);
+        // console.log('[EditProductPage] Formatted data:', formattedData);
         setData(formattedData);
       } catch (error: any) {
-        console.error('Error fetching product:', error);
+        // console.error('Error fetching product:', error);
         const errorMessage =
           error?.message || error?.error || 'Failed to load product';
         setError(errorMessage);

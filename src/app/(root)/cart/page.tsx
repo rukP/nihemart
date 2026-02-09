@@ -72,7 +72,7 @@ const Cart = () => {
         );
         setOrdersDisabledMessage(json.message || null);
       } catch (_err) {
-        console.warn('Failed to load orders_enabled setting', _err);
+        // console.warn('Failed to load orders_enabled setting', _err);
         // Do not assume orders are enabled on fetch error; prefer schedule-managed default
         if (!mounted) return;
         setAdminEnabled(null);
@@ -96,7 +96,7 @@ const Cart = () => {
     try {
       await updateQuantity(itemId, newQuantity);
     } catch (_error) {
-      console.error('Failed to update quantity:', _error);
+      // console.error('Failed to update quantity:', _error);
     } finally {
       setUpdatingItem(null);
     }
@@ -107,7 +107,7 @@ const Cart = () => {
     try {
       await removeItem(itemId);
     } catch (_error) {
-      console.error('Failed to remove item:', _error);
+      // console.error('Failed to remove item:', _error);
     } finally {
       setRemovingItem(null);
     }

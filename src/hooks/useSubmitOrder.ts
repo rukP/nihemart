@@ -196,7 +196,7 @@ export default function useSubmitOrder(args: any) {
               (args.scheduleNotes || '') as string
             ).trim();
           } catch (_e) {
-            console.warn('Failed to set schedule_notes:', _e);
+            // console.warn('Failed to set schedule_notes:', _e);
           }
         }
 
@@ -204,7 +204,7 @@ export default function useSubmitOrder(args: any) {
         // No delivery_time field required
 
         if (!createOrder || typeof createOrder.mutate !== 'function') {
-          console.error('createOrder mutation is not available', createOrder);
+          // console.error('createOrder mutation is not available', createOrder);
           toast.error(
             'Unable to submit order right now. Please try again later.'
           );
@@ -254,7 +254,7 @@ export default function useSubmitOrder(args: any) {
                     if (clearAllCheckoutClientState)
                       clearAllCheckoutClientState();
                   } catch (_e) {
-                    console.error('Failed to clear checkout state:', _e);
+                    // console.error('Failed to clear checkout state:', _e);
                   }
 
                   // Payment-order linking is handled automatically by the backend
@@ -263,16 +263,16 @@ export default function useSubmitOrder(args: any) {
                   // Guests cannot manage orders — redirect immediately
                   if (user && (user as any).id) {
                     try {
-                      console.debug(
-                        'useSubmitOrder: navigating to user order page',
-                        (created as any)?.id
-                      );
+                      // console.debug(
+                      //   'useSubmitOrder: navigating to user order page',
+                      //   (created as any)?.id
+                      // );
                       await router.push(`/orders/${(created as any)?.id}`);
-                    } catch (navErr) {
-                      console.error(
-                        'Navigation to /orders/:id failed:',
-                        navErr
-                      );
+                    } catch (_navErr) {
+                      // console.error(
+                      //   'Navigation to /orders/:id failed:',
+                      //   navErr
+                      // );
                     }
                   } else {
                     try {
@@ -321,15 +321,15 @@ export default function useSubmitOrder(args: any) {
 
                       // Navigate first for immediate UX
                       try {
-                        console.debug(
-                          'useSubmitOrder: navigating to /thank-you for guest'
-                        );
+                        // console.debug(
+                        //   'useSubmitOrder: navigating to /thank-you for guest'
+                        // );
                         navigateToThankYou(router);
-                      } catch (navErr) {
-                        console.error(
-                          'Navigation to /thank-you failed:',
-                          navErr
-                        );
+                      } catch (_navErr) {
+                        // console.error(
+                        //   'Navigation to /thank-you failed:',
+                        //   navErr
+                        // );
                       }
                     } catch (_e) {
                       // ignore navigation errors
@@ -359,11 +359,11 @@ export default function useSubmitOrder(args: any) {
                       } catch (_e) {}
                     }, 0);
                   }
-                } catch (outerError) {
-                  console.error('Unexpected error during payment linking', {
-                    orderId: (created as any)?.id,
-                    error: outerError,
-                  });
+                } catch (_outerError) {
+                  // console.error('Unexpected error during payment linking', {
+                  //   orderId: (created as any)?.id,
+                  //   error: outerError,
+                  // });
                   // Navigate immediately for guests, then run cleanup
                   try {
                     if (user && (user as any).id) {
@@ -381,7 +381,7 @@ export default function useSubmitOrder(args: any) {
                 }
               },
               onError: (error: any) => {
-                console.error('createOrder.onError', error);
+                // console.error('createOrder.onError', error);
                 try {
                   if (setPaymentInProgress) setPaymentInProgress(false);
                 } catch (_e) {}
@@ -407,7 +407,7 @@ export default function useSubmitOrder(args: any) {
               },
             });
           } catch (error: any) {
-            console.error('Order creation failed (sync):', error);
+            // console.error('Order creation failed (sync):', error);
             try {
               if (setPaymentInProgress) setPaymentInProgress(false);
             } catch (_e) {}
@@ -425,12 +425,12 @@ export default function useSubmitOrder(args: any) {
           // For retry mode, we already have an orderId
           if (effectiveIsRetry && effectiveRetryOrderId) {
             try {
-              console.log(
-                '[useSubmitOrder] Retrying payment for order:',
-                effectiveRetryOrderId,
-                'with method:',
-                args.paymentMethod
-              );
+              // console.log(
+              //   '[useSubmitOrder] Retrying payment for order:',
+              //   effectiveRetryOrderId,
+              //   'with method:',
+              //   args.paymentMethod
+              // );
               if (setPaymentInProgress) setPaymentInProgress(true);
 
               const customerPhone =
@@ -505,7 +505,7 @@ export default function useSubmitOrder(args: any) {
               toast.error('Payment retry failed. Please try again.');
               return;
             } catch (err: any) {
-              console.error('Payment retry failed:', err);
+              // console.error('Payment retry failed:', err);
               if (setPaymentInProgress) setPaymentInProgress(false);
               setIsSubmitting?.(false);
               toast.error(
@@ -561,14 +561,14 @@ export default function useSubmitOrder(args: any) {
               orderDetails: `Order for ${paymentCustomerName}`,
             };
 
-            console.log(
-              '[useSubmitOrder] Initiating payment with orderData (order will be created after payment):',
-              {
-                paymentMethod: paymentRequest.paymentMethod,
-                amount: paymentRequest.amount,
-                hasOrderData: !!paymentRequest.orderData,
-              }
-            );
+            // console.log(
+            //   '[useSubmitOrder] Initiating payment with orderData (order will be created after payment):',
+            //   {
+            //     paymentMethod: paymentRequest.paymentMethod,
+            //     amount: paymentRequest.amount,
+            //     hasOrderData: !!paymentRequest.orderData,
+            //   }
+            // );
 
             const validationErrors = validatePaymentRequest
               ? validatePaymentRequest(paymentRequest)
@@ -608,13 +608,13 @@ export default function useSubmitOrder(args: any) {
                 paymentResult.data?.checkout_url ||
                 null;
 
-              console.log('[useSubmitOrder] Payment result:', {
-                success: paymentResult.success,
-                checkoutUrl: checkoutUrl || 'NOTFOUND',
-                hasData: !!paymentResult.data,
-                dataUrl: paymentResult.data?.url,
-                reference: ref,
-              });
+              // console.log('[useSubmitOrder] Payment result:', {
+              //   success: paymentResult.success,
+              //   checkoutUrl: checkoutUrl || 'NOTFOUND',
+              //   hasData: !!paymentResult.data,
+              //   dataUrl: paymentResult.data?.url,
+              //   reference: ref,
+              // });
 
               // For card payments, always redirect to checkout URL if available
               // For mobile money, redirect to our payment page
@@ -625,18 +625,18 @@ export default function useSubmitOrder(args: any) {
 
               // Check if there's a callback for handling payment (unified checkout flow)
               if (args.onPaymentInitiated) {
-                console.log(
-                  '[useSubmitOrder] Using payment callback instead of redirecting'
-                );
+                // console.log(
+                //   '[useSubmitOrder] Using payment callback instead of redirecting'
+                // );
                 // Store reference for when user returns from KPay
                 if (ref) {
                   try {
                     sessionStorage.setItem('kpay_reference', String(ref));
                   } catch (_e) {
-                    console.warn(
-                      '[useSubmitOrder] Failed to store reference:',
-                      _e
-                    );
+                    // console.warn(
+                    //   '[useSubmitOrder] Failed to store reference:',
+                    //   _e
+                    // );
                   }
                 }
                 // Clear any previous payment failures before initiating new payment
@@ -644,7 +644,7 @@ export default function useSubmitOrder(args: any) {
                 try {
                   setPaymentFailure?.(null);
                 } catch (_e) {
-                  console.warn('Failed to clear payment failure state:', _e);
+                  // console.warn('Failed to clear payment failure state:', _e);
                 }
 
                 // Call the callback with payment info
@@ -658,19 +658,19 @@ export default function useSubmitOrder(args: any) {
 
               // Legacy redirect flow (for backward compatibility)
               if (checkoutUrl) {
-                console.log(
-                  '[useSubmitOrder] Redirecting to KPay checkout:',
-                  checkoutUrl
-                );
+                // console.log(
+                //   '[useSubmitOrder] Redirecting to KPay checkout:',
+                //   checkoutUrl
+                // );
                 // Store reference for when user returns from KPay
                 if (ref) {
                   try {
                     sessionStorage.setItem('kpay_reference', String(ref));
                   } catch (_e) {
-                    console.warn(
-                      '[useSubmitOrder] Failed to store reference:',
-                      _e
-                    );
+                    // console.warn(
+                    //   '[useSubmitOrder] Failed to store reference:',
+                    //   _e
+                    // );
                   }
                 }
                 window.location.href = String(checkoutUrl);
@@ -679,10 +679,10 @@ export default function useSubmitOrder(args: any) {
 
               // For card payments, if no checkout URL, this is an error
               if (isCardPayment) {
-                console.error(
-                  '[useSubmitOrder] Card payment initiated but no checkout URL found in response:',
-                  paymentResult
-                );
+                // console.error(
+                //   '[useSubmitOrder] Card payment initiated but no checkout URL found in response:',
+                //   paymentResult
+                // );
                 if (setPaymentInProgress) setPaymentInProgress(false);
                 setIsSubmitting?.(false);
                 toast.error(
@@ -718,7 +718,7 @@ export default function useSubmitOrder(args: any) {
               );
             }
           } catch (err: any) {
-            console.error('Payment initiation failed:', err);
+            // console.error('Payment initiation failed:', err);
             if (setPaymentInProgress) setPaymentInProgress(false);
             setIsSubmitting?.(false);
             toast.error(
@@ -744,7 +744,7 @@ export default function useSubmitOrder(args: any) {
             try {
               if (clearAllCheckoutClientState) clearAllCheckoutClientState();
             } catch (_e) {
-              console.error('Failed to clear checkout state:', _e);
+              // console.error('Failed to clear checkout state:', _e);
             }
 
             // Clear cart ONLY if this is a cart order (NOT Buy Now)
@@ -752,22 +752,22 @@ export default function useSubmitOrder(args: any) {
             try {
               if (!isBuyNowFlow && clearCart) {
                 clearCart();
-                console.log('[useSubmitOrder] Cart cleared (cart order)');
+                // console.log('[useSubmitOrder] Cart cleared (cart order)');
               } else if (isBuyNowFlow) {
-                console.log('[useSubmitOrder] Cart preserved (Buy Now order)');
+                // console.log('[useSubmitOrder] Cart preserved (Buy Now order)');
               }
             } catch (_e) {
-              console.error('Failed to clear cart:', _e);
+              // console.error('Failed to clear cart:', _e);
             }
 
             // Clear buy now item if this was a buy now flow
             try {
               if (isBuyNowFlow && clearBuyNowItem) {
                 clearBuyNowItem();
-                console.log('[useSubmitOrder] Buy now item cleared');
+                // console.log('[useSubmitOrder] Buy now item cleared');
               }
             } catch (_e) {
-              console.error('Failed to clear buy now item:', _e);
+              // console.error('Failed to clear buy now item:', _e);
             }
 
             if (setOrderItems) setOrderItems([]);
@@ -775,14 +775,14 @@ export default function useSubmitOrder(args: any) {
             // Redirect guests immediately, then cleanup asynchronously
             if (user && (user as any).id) {
               try {
-                console.debug(
-                  'useSubmitOrder: navigating to user order page (COD)',
-                  created?.id
-                );
+                // console.debug(
+                //   'useSubmitOrder: navigating to user order page (COD)',
+                //   created?.id
+                // );
                 navigatedToOrder = true;
                 await router.push(`/orders/${created?.id}`);
-              } catch (navErr) {
-                console.error('Navigation to /orders/:id failed:', navErr);
+              } catch (_navErr) {
+                // console.error('Navigation to /orders/:id failed:', navErr);
               }
               try {
                 toast.success(
@@ -791,12 +791,12 @@ export default function useSubmitOrder(args: any) {
               } catch (_e) {}
             } else {
               try {
-                console.debug(
-                  'useSubmitOrder: navigating to /thank-you for guest (COD)'
-                );
+                // console.debug(
+                //   'useSubmitOrder: navigating to /thank-you for guest (COD)'
+                // );
                 navigateToThankYou(router);
-              } catch (navErr) {
-                console.error('Navigation to /thank-you failed:', navErr);
+              } catch (_navErr) {
+                // console.error('Navigation to /thank-you failed:', navErr);
               }
               setTimeout(() => {
                 try {
@@ -808,7 +808,7 @@ export default function useSubmitOrder(args: any) {
             }
           },
           onError: (error: any) => {
-            console.error('createOrder.onError', error);
+            // console.error('createOrder.onError', error);
             try {
               if (setPaymentInProgress) setPaymentInProgress(false);
             } catch (_e) {}
@@ -839,7 +839,7 @@ export default function useSubmitOrder(args: any) {
           },
         });
       } catch (error: any) {
-        console.error('Order creation failed (sync):', error);
+        // console.error('Order creation failed (sync):', error);
         try {
           if (setPaymentInProgress) setPaymentInProgress(false);
         } catch (_e) {}
@@ -849,7 +849,7 @@ export default function useSubmitOrder(args: any) {
         setIsSubmitting?.(false);
       }
     } catch (_err) {
-      console.error('Unhandled error in submit order:', _err);
+      // console.error('Unhandled error in submit order:', _err);
       setIsSubmitting?.(false);
       toast.error('Failed to submit order. Please try again.');
     }

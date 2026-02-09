@@ -14,7 +14,7 @@ export default async function handler(
     await deleteRider(riderId);
     return res.status(200).json({ deleted: true });
   } catch (err: any) {
-    console.error('delete-rider failed', err);
+    // console.error('delete-rider failed', err);
     return res.status(500).json({ error: err?.message || String(err) });
   }
 }

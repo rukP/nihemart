@@ -295,7 +295,7 @@ export async function fetchProductsPage({
   }
 
   // Return empty result if no data or invalid response
-  console.warn('fetchProductsPage: Invalid or empty response', result);
+  // console.warn('fetchProductsPage: Invalid or empty response', result);
   return {
     data: [],
     count: 0,
@@ -603,7 +603,7 @@ export async function fetchStoreProductById(id: string) {
         } as any;
       }
     } catch (_err) {
-      console.warn('fetchStoreProductById cache lookup failed', _err);
+      // console.warn('fetchStoreProductById cache lookup failed', _err);
     }
   }
 
@@ -633,7 +633,7 @@ export async function fetchStoreProductById(id: string) {
         );
       }
     } catch (_error) {
-      console.error('Failed to fetch similar products:', _error);
+      // console.error('Failed to fetch similar products:', _error);
     }
   }
 
@@ -698,7 +698,7 @@ export async function fetchAllProductIds(): Promise<string[]> {
     }
     return [];
   } catch (_error) {
-    console.error('Failed to fetch product IDs:', _error);
+    // console.error('Failed to fetch product IDs:', _error);
     return [];
   }
 }

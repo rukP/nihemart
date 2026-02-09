@@ -377,7 +377,7 @@ export const BulkUploadModal: React.FC<BulkUploadModalProps> = ({
       onUploadComplete();
       onClose();
     } catch (error: any) {
-      console.error('Submission Error:', error);
+      // console.error('Submission Error:', error);
 
       // This is the new, improved error handling block
       if (error && error.code === '23505') {

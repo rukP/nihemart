@@ -213,7 +213,7 @@ const MoreProducts: FC<MoreProductsProps> = ({}) => {
           }))
         );
       } catch (_error) {
-        console.error('Failed to load landing page data', _error);
+        // console.error('Failed to load landing page data', _error);
       } finally {
         setLoading(false);
       }

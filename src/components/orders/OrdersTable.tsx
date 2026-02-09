@@ -222,7 +222,7 @@ const OrdersTable: FC<OrdersTableProps> = () => {
           } catch (_e) {}
         }
       } catch (_err) {
-        console.warn('Failed to load orders_enabled setting', _err);
+        // console.warn('Failed to load orders_enabled setting', _err);
         if (mounted) setOrdersEnabled(null);
       }
     })();
@@ -243,7 +243,7 @@ const OrdersTable: FC<OrdersTableProps> = () => {
     try {
       await refetch();
     } catch (_error) {
-      console.error('Error refetching orders:', _error);
+      // console.error('Error refetching orders:', _error);
     }
   };
 

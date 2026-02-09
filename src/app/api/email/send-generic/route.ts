@@ -31,14 +31,14 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json' },
       });
     } catch (err: any) {
-      console.error('/api/email/send-generic sendEmail error:', err);
+      // console.error('/api/email/send-generic sendEmail error:', err);
       return new Response(JSON.stringify({ ok: false, error: String(err) }), {
         status: 502,
         headers: { 'Content-Type': 'application/json' },
       });
     }
   } catch (err: any) {
-    console.error('/api/email/send-generic error:', err);
+    // console.error('/api/email/send-generic error:', err);
     return new Response(
       JSON.stringify({ error: err?.message || String(err) }),
       {

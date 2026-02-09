@@ -44,7 +44,7 @@ export default async function handler(
     const result = await response.json();
     res.status(200).json({ success: true, ...result });
   } catch (error: any) {
-    console.error('Error deleting user:', error);
+    // console.error('Error deleting user:', error);
     res.status(500).json({
       error: 'Failed to delete user',
       details:

@@ -84,7 +84,7 @@ function ProductsPageContent() {
       setProducts(data);
       setTotalCount(count);
     } catch (_error) {
-      console.error('Failed to fetch products:', _error);
+      // console.error('Failed to fetch products:', _error);
     } finally {
       setLoading(false);
     }
@@ -107,10 +107,10 @@ function ProductsPageContent() {
         } else if (resp && Array.isArray(resp.data)) {
           categoriesWithSubs = resp.data;
         } else {
-          console.warn(
-            'fetchCategoriesWithSubcategories returned unexpected shape',
-            resp
-          );
+          // console.warn(
+          //   'fetchCategoriesWithSubcategories returned unexpected shape',
+          //   resp
+          // );
         }
 
         const allCategories = categoriesWithSubs.map(
@@ -125,7 +125,7 @@ function ProductsPageContent() {
         setCategories(allCategories);
         setSubcategories(allSubcategories);
       } catch (_error) {
-        console.error('Failed to load categories and subcategories:', _error);
+        // console.error('Failed to load categories and subcategories:', _error);
       }
     };
     loadCategoriesData();
@@ -157,7 +157,7 @@ function ProductsPageContent() {
         await deleteProduct(id);
         fetchAndSetProducts();
       } catch (_error) {
-        console.error('Failed to delete product:', _error);
+        // console.error('Failed to delete product:', _error);
       }
     }
   };
@@ -178,7 +178,7 @@ function ProductsPageContent() {
       await updateProduct(id, { status: newStatus });
       fetchAndSetProducts();
     } catch (_error) {
-      console.error('Failed to update product status:', _error);
+      // console.error('Failed to update product status:', _error);
     }
   };
 
@@ -266,7 +266,7 @@ function ProductsPageContent() {
         `ProductsExport_${new Date().toISOString().split('T')[0]}.xlsx`
       );
     } catch (_error) {
-      console.error('Failed to export products:', _error);
+      // console.error('Failed to export products:', _error);
     } finally {
       setIsExporting(false);
     }

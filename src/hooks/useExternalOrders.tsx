@@ -15,18 +15,18 @@ export function useExternalOrders() {
 
   const createExternalOrderMutation = useMutation({
     mutationFn: async (orderData: ExternalOrderInput) => {
-      console.log('External Order Mutation - Starting with data:', orderData);
+      // console.log('External Order Mutation - Starting with data:', orderData);
       try {
         const result = await createExternalOrder(orderData);
-        console.log('External Order Mutation - Success:', result);
+        // console.log('External Order Mutation - Success:', result);
         return result;
       } catch (_error) {
-        console.error('External Order Mutation - Error:', _error);
-        throw _error;
+        // console.error('External Order Mutation - Error:', _error);
+        // throw _error;
       }
     },
     onSuccess: data => {
-      console.log('External Order Mutation - onSuccess called with:', data);
+      // console.log('External Order Mutation - onSuccess called with:', data);
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
       if (data.id) {
         queryClient.setQueryData(orderKeys.detail(data.id), data);
@@ -34,7 +34,7 @@ export function useExternalOrders() {
       toast.success('External order created successfully');
     },
     onError: (error: Error) => {
-      console.error('External Order Mutation - onError:', error);
+      // console.error('External Order Mutation - onError:', error);
       toast.error(error.message || 'Failed to create external order');
     },
   });

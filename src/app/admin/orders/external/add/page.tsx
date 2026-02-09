@@ -74,7 +74,7 @@ export default function AddExternalOrderPage() {
         });
         return result?.data || [];
       } catch (_error) {
-        console.error('Failed to fetch products:', _error);
+        toast.error('Failed to fetch products');
         throw _error;
       }
     },
@@ -192,14 +192,14 @@ export default function AddExternalOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('External Order - Submit handler called');
+    // console.log('External Order - Submit handler called');
 
     if (isSubmitting) {
-      console.log('Already submitting, returning');
+      // console.log('Already submitting, returning');
       return;
     }
     setIsSubmitting(true);
-    console.log('Starting submission...');
+    // console.log('Starting submission...');
 
     // FIXED: Normalize items - preserve variation data and ensure all fields are set
     // This ensures variant information is correctly included in the order submission
@@ -226,9 +226,9 @@ export default function AddExternalOrderPage() {
           String(item.variation_name).trim() !== ''
         ) {
           finalVariationName = String(item.variation_name).trim();
-          console.log(
-            `[External Order] Preserving existing variation_name for item ${idx}: "${finalVariationName}"`
-          );
+          // console.log(
+          //   `[External Order] Preserving existing variation_name for item ${idx}: "${finalVariationName}"`
+          // );
         }
 
         // If we have a variation ID but no variation name yet, try to build it from the product details
@@ -258,9 +258,9 @@ export default function AddExternalOrderPage() {
                   .join(' / ');
               }
               if (finalVariationName) {
-                console.log(
-                  `[External Order] Built variation name from product details for item ${idx}: "${finalVariationName}"`
-                );
+                // console.log(
+                //   `[External Order] Built variation name from product details for item ${idx}: "${finalVariationName}"`
+                // );
               }
             }
           }
@@ -277,9 +277,9 @@ export default function AddExternalOrderPage() {
             )
               .trim()
               .slice(0, 8)}...`;
-            console.log(
-              `[External Order] Using variation ID as fallback name for item ${idx}: "${finalVariationName}"`
-            );
+            // console.log(
+            //   `[External Order] Using variation ID as fallback name for item ${idx}: "${finalVariationName}"`
+            // );
           }
         }
 
@@ -297,20 +297,20 @@ export default function AddExternalOrderPage() {
           product_variation_id: productVariationId,
         };
 
-        console.log(
-          `[External Order] Normalized item "${
-            sel.name || item.product_name
-          }" variant data:`,
-          {
-            ...variantData,
-            original_item: {
-              variation_name: item.variation_name,
-              product_variation_id: item.product_variation_id,
-            },
-            selected_product: sel?.name,
-            has_variations: details?.variations?.length > 0,
-          }
-        );
+        // console.log(
+        //   `[External Order] Normalized item "${
+        //     sel.name || item.product_name
+        //   }" variant data:`,
+        //   {
+        //     ...variantData,
+        //     original_item: {
+        //       variation_name: item.variation_name,
+        //       product_variation_id: item.product_variation_id,
+        //     },
+        //     selected_product: sel?.name,
+        //     has_variations: details?.variations?.length > 0,
+        //   }
+        // );
 
         return {
           ...item,
@@ -379,17 +379,17 @@ export default function AddExternalOrderPage() {
       );
       const transportFee = Number(formData.transport || 0);
 
-      console.log('Calculated total:', calculatedTotal);
-      console.log(
-        'Items with variations:',
-        normalizedItems.map(item => ({
-          product_name: item.product_name,
-          variation_name: item.variation_name,
-          price: item.price,
-          quantity: item.quantity,
-          total: item.price * item.quantity,
-        }))
-      );
+      // console.log('Calculated total:', calculatedTotal);
+      // console.log(
+      //   'Items with variations:',
+      //   normalizedItems.map(item => ({
+      //     product_name: item.product_name,
+      //     variation_name: item.variation_name,
+      //     price: item.price,
+      //     quantity: item.quantity,
+      //     total: item.price * item.quantity,
+      //   }))
+      // );
 
       // CRITICAL: Ensure variant data is explicitly preserved and not lost during mapping
       const orderData = {
@@ -422,45 +422,45 @@ export default function AddExternalOrderPage() {
                 ? String(item.product_variation_id).trim()
                 : null,
           };
-          console.log(
-            `[External Order] Item "${item.product_name}" variant data:`,
-            {
-              variation_name: itemData.variation_name,
-              product_variation_id: itemData.product_variation_id,
-              original_item: {
-                variation_name: item.variation_name,
-                product_variation_id: item.product_variation_id,
-              },
-            }
-          );
+          // console.log(
+          //   `[External Order] Item "${item.product_name}" variant data:`,
+          //   {
+          //     variation_name: itemData.variation_name,
+          //     product_variation_id: itemData.product_variation_id,
+          //     original_item: {
+          //       variation_name: item.variation_name,
+          //       product_variation_id: item.product_variation_id,
+          //     },
+          //   }
+          // );
           return itemData;
         }),
         is_external: true,
         is_paid: true,
       };
 
-      console.log(
-        '[External Order] Creating order with variant data:',
-        JSON.stringify(
-          orderData.items.map((it: any) => ({
-            product_name: it.product_name,
-            variation_name: it.variation_name,
-            product_variation_id: it.product_variation_id,
-          })),
-          null,
-          2
-        )
-      );
+      // console.log(
+      //   '[External Order] Creating order with variant data:',
+      //   JSON.stringify(
+      //     orderData.items.map((it: any) => ({
+      //       product_name: it.product_name,
+      //       variation_name: it.variation_name,
+      //       product_variation_id: it.product_variation_id,
+      //     })),
+      //     null,
+      //     2
+      //   )
+      // );
 
       try {
-        const result = await createExternalOrder.mutateAsync(orderData);
-        console.log('External order created successfully:', result);
+        const _result = await createExternalOrder.mutateAsync(orderData);
+        // console.log('External order created successfully:', result);
 
         toast.success('External order added successfully');
         router.push('/admin/orders/external');
         return;
       } catch (error) {
-        console.error('Failed to create external order:', error);
+        // console.error('Failed to create external order:', error);
         toast.error((error as Error).message || 'Failed to add external order');
         setIsSubmitting(false);
         return;
@@ -846,10 +846,10 @@ export default function AddExternalOrderPage() {
                                     product.id
                                   );
                                 } catch (_err) {
-                                  console.error(
-                                    'Failed to fetch product details',
-                                    _err
-                                  );
+                                  // console.error(
+                                  //   'Failed to fetch product details',
+                                  //   _err
+                                  // );
                                   toast.error(
                                     `Failed to load variations for ${product.name}. Please try again.`
                                   );

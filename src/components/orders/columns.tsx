@@ -188,7 +188,7 @@ function StatusCell({ order }: { order: Order }) {
         status: newStatus,
       });
     } catch (_error) {
-      console.error('Failed to update order status:', _error);
+      // console.error('Failed to update order status:', _error);
     } finally {
       setIsUpdating(false);
     }

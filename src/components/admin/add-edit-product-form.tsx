@@ -348,7 +348,7 @@ export default function AddEditProductForm({
           // FIXED: Also set form value to match the loaded content
           form.setValue('description', quill.root.innerHTML);
         } catch (_error) {
-          console.error('Error loading description into Quill:', _error);
+          // console.error('Error loading description into Quill:', _error);
           // Fallback: use dangerouslyPasteHTML if setContents fails
           quill.clipboard.dangerouslyPasteHTML(descriptionHtml);
           form.setValue('description', quill.root.innerHTML);
@@ -415,7 +415,7 @@ export default function AddEditProductForm({
                 id: loadingToast,
               });
             } catch (error: any) {
-              console.error('Quill image upload failed', error);
+              // console.error('Quill image upload failed', error);
               const errorMessage =
                 error?.message || error?.error || 'Image upload failed';
               toast.error(`Image upload failed: ${errorMessage}`, {
@@ -430,14 +430,14 @@ export default function AddEditProductForm({
   }, [quill, form, initialData]);
 
   const onSubmit: SubmitHandler<ProductFormData> = async data => {
-    console.log('onSubmit called', {
-      isValid: form.formState.isValid,
-      errors: form.formState.errors,
-    });
+    // console.log('onSubmit called', {
+    //   isValid: form.formState.isValid,
+    //   errors: form.formState.errors,
+    // });
     const toastId = toast.loading(
       isEditMode ? 'Updating product...' : 'Creating product...'
     );
-    console.log('Toast shown with id:', toastId);
+    // console.log('Toast shown with id:', toastId);
     try {
       const productBaseData: ProductBase = {
         name: data.name,
@@ -464,7 +464,7 @@ export default function AddEditProductForm({
         social_media_link: data.social_media_link || null,
       };
 
-      console.log({ productBaseData });
+      // console.log({ productBaseData });
       const variationsInput: ProductVariation[] = data.variations.map(v => ({
         name: v.name || null,
         price: v.price,
@@ -518,7 +518,7 @@ export default function AddEditProductForm({
       router.push('/admin/products');
       router.refresh();
     } catch (error: any) {
-      console.error(error);
+      // console.error(error);
       const errorMessage = getProductErrorMessage(error, isEditMode);
       toast.error(errorMessage, { id: toastId });
     }
@@ -563,10 +563,10 @@ export default function AddEditProductForm({
                     className="bg-green-600 hover:bg-green-700"
                     disabled={form.formState.isSubmitting}
                     onClick={() => {
-                      console.log('Save button clicked', {
-                        isValid: form.formState.isValid,
-                        errors: form.formState.errors,
-                      });
+                      // console.log('Save button clicked', {
+                      //   isValid: form.formState.isValid,
+                      //   errors: form.formState.errors,
+                      // });
                       form.handleSubmit(onSubmit)();
                     }}
                   >

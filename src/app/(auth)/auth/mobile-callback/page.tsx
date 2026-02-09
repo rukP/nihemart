@@ -95,7 +95,7 @@ export default function MobileAuthCallback() {
         }
       }, 5000);
     } catch (err: any) {
-      console.error('Mobile callback error:', err);
+      // console.error('Mobile callback error:', err);
       setStatus('error');
       setErrorMsg(err.message || 'An error occurred');
       // Try to deep link with error

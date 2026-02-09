@@ -106,7 +106,7 @@ export default function ReviewsTable({
         onRefresh();
       }
     } catch (error: any) {
-      console.error('Failed to delete review', error);
+      // console.error('Failed to delete review', error);
       toast.error(error.message || 'Failed to delete review.', { id: toastId });
     } finally {
       setIsDeleting(null);

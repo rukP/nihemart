@@ -131,10 +131,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             const notifications = Array.isArray(userNotifications)
               ? userNotifications
               : userNotifications?.notifications || [];
-            console.debug(
-              '[NotificationsContext] Fetched user-specific notifications:',
-              notifications.length
-            );
+            // console.debug(
+            //   '[NotificationsContext] Fetched user-specific notifications:',
+            //   notifications.length
+            // );
             // Normalize field names: createdAt -> created_at
             const normalized = notifications.map((n: any) => ({
               ...n,
@@ -142,7 +142,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             }));
             combined = [...normalized, ...combined];
           } catch (_e) {
-            console.error('Failed to fetch user-specific notifications:', _e);
+            // console.error('Failed to fetch user-specific notifications:', _e);
           }
         }
 
@@ -155,10 +155,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             const notifications = Array.isArray(adminNotifications)
               ? adminNotifications
               : adminNotifications?.notifications || [];
-            console.debug(
-              '[NotificationsContext] Fetched admin notifications:',
-              notifications.length
-            );
+            // console.debug(
+            //   '[NotificationsContext] Fetched admin notifications:',
+            //   notifications.length
+            // );
             // Normalize field names: createdAt -> created_at
             const normalized = notifications.map((n: any) => ({
               ...n,
@@ -166,7 +166,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             }));
             combined = [...normalized, ...combined];
           } catch (_e) {
-            console.error('Failed to fetch admin notifications:', _e);
+            // console.error('Failed to fetch admin notifications:', _e);
           }
         }
 
@@ -179,10 +179,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             const notifications = Array.isArray(riderNotifications)
               ? riderNotifications
               : riderNotifications?.notifications || [];
-            console.debug(
-              '[NotificationsContext] Fetched rider notifications:',
-              notifications.length
-            );
+            // console.debug(
+            //   '[NotificationsContext] Fetched rider notifications:',
+            //   notifications.length
+            // );
             // Normalize field names: createdAt -> created_at
             const normalized = notifications.map((n: any) => ({
               ...n,
@@ -190,7 +190,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             }));
             combined = [...normalized, ...combined];
           } catch (_e) {
-            console.error('Failed to fetch rider notifications:', _e);
+            // console.error('Failed to fetch rider notifications:', _e);
           }
         }
 
@@ -222,10 +222,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           }
         );
 
-        console.debug(
-          '[NotificationsContext] Total notifications fetched and normalized:',
-          dedupedFetched.length
-        );
+        // console.debug(
+        //   '[NotificationsContext] Total notifications fetched and normalized:',
+        //   dedupedFetched.length
+        // );
 
         // merge with existing notifications (prev) while ensuring unique ids
         setNotifications(prev => {
@@ -248,14 +248,14 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             seenIds.add(p.id);
           }
 
-          console.debug(
-            '[NotificationsContext] Final merged notifications:',
-            merged.length
-          );
+          // console.debug(
+          //   '[NotificationsContext] Final merged notifications:',
+          //   merged.length
+          // );
           return merged.slice(0, 200);
         });
       } catch (_err) {
-        console.error('fetchPersisted notifications err', _err);
+        // console.error('fetchPersisted notifications err', _err);
       }
     };
 
@@ -274,9 +274,9 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             // Socket is disconnected - check if it's been disconnected for a while
             // If so, fetch persisted notifications as fallback
 
-            console.debug(
-              'Socket disconnected - fetching notifications as fallback'
-            );
+            // console.debug(
+            //   'Socket disconnected - fetching notifications as fallback'
+            // );
             fetchPersisted();
           }
         } catch (_e) {}
@@ -302,7 +302,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       // Initialize Socket.IO connection
       const socket = getSocket();
       if (!socket) {
-        console.warn('Failed to initialize Socket.IO connection');
+        // console.warn('Failed to initialize Socket.IO connection');
         return;
       }
 
@@ -311,10 +311,10 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
       // Listen for new notifications
       socket.on('notification:new', (notification: any) => {
         try {
-          console.debug(
-            'Socket.IO received notification:new',
-            notification?.id
-          );
+          // console.debug(
+          //   'Socket.IO received notification:new',
+          //   notification?.id
+          // );
           handleRealtimeRow(notification);
 
           // Broadcast notification event via localStorage for other components
@@ -337,17 +337,17 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             // Ignore localStorage errors
           }
         } catch (_e) {
-          console.error('Error handling notification:new', _e);
+          // console.error('Error handling notification:new', _e);
         }
       });
 
       // Listen for notification updates
       socket.on('notification:updated', (notification: any) => {
         try {
-          console.debug(
-            'Socket.IO received notification:updated',
-            notification?.id
-          );
+          // console.debug(
+          //   'Socket.IO received notification:updated',
+          //   notification?.id
+          // );
           handleRealtimeRow(notification);
 
           // Broadcast notification event via localStorage for other components
@@ -370,17 +370,17 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             // Ignore localStorage errors
           }
         } catch (_e) {
-          console.error('Error handling notification:updated', _e);
+          // console.error('Error handling notification:updated', _e);
         }
       });
 
       // Listen for general notification created event (fallback)
       socket.on('notification:created', (notification: any) => {
         try {
-          console.debug(
-            'Socket.IO received notification:created',
-            notification?.id
-          );
+          // console.debug(
+          //   'Socket.IO received notification:created',
+          //   notification?.id
+          // );
           handleRealtimeRow(notification);
 
           // Broadcast notification event via localStorage for other components
@@ -403,21 +403,21 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
             // Ignore localStorage errors
           }
         } catch (_e) {
-          console.error('Error handling notification:created', _e);
+          // console.error('Error handling notification:created', _e);
         }
       });
 
       // Handle connection events
       socket.on('connect', () => {
-        console.debug('Socket.IO connected for notifications');
+        // console.debug('Socket.IO connected for notifications');
         // Subscribe to notifications
         socket.emit('subscribe:notifications');
         // Stop fallback polling when connected
         stopFallbackPoll();
       });
 
-      socket.on('disconnect', reason => {
-        console.debug('Socket.IO disconnected:', reason);
+      socket.on('disconnect', _reason => {
+        // console.debug('Socket.IO disconnected:', reason);
         // Start fallback polling only if disconnected
         // Socket.IO will try to reconnect automatically
         startFallbackPoll();
@@ -428,11 +428,11 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         startFallbackPoll();
       }
 
-      console.debug('Socket.IO notifications setup complete', {
-        userId: user.id,
-        isAdmin,
-        riderId,
-      });
+      // console.debug('Socket.IO notifications setup complete', {
+      //   userId: user.id,
+      //   isAdmin,
+      //   riderId,
+      // });
     };
 
     // Reconnect/resubscribe handling: re-setup realtime when browser comes back online
@@ -441,7 +441,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         reconnectSocket();
         setupRealtime();
       } catch (_e) {
-        console.error('Failed to re-connect Socket.IO on online:', _e);
+        // console.error('Failed to re-connect Socket.IO on online:', _e);
       }
     };
 
@@ -450,14 +450,13 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
     const handleRealtimeRow = (row: any) => {
       try {
         // Helpful debug during development: log realtime rows for troubleshooting
-
-        console.debug(
-          'notifications realtime row:',
-          row?.id,
-          row?.recipient_user_id || row?.recipientUserId,
-          row?.recipient_role || row?.recipientRole,
-          row?.type
-        );
+        // console.debug(
+        //   'notifications realtime row:',
+        //   row?.id,
+        //   row?.recipient_user_id || row?.recipientUserId,
+        //   row?.recipient_role || row?.recipientRole,
+        //   row?.type
+        // );
       } catch (_e) {}
       try {
         // Event handled via Socket.IO realtime
@@ -475,26 +474,26 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Debug logging for admin notifications
       if (recipientRole === 'admin') {
-        console.debug('[NotificationsContext] Admin notification received:', {
-          notificationId: row?.id,
-          recipientRole,
-          isAdmin,
-          isForAdmin,
-          userRoles: user?.roles || [],
-        });
+        // console.debug('[NotificationsContext] Admin notification received:', {
+        //   notificationId: row?.id,
+        //   recipientRole,
+        //   isAdmin,
+        //   isForAdmin,
+        //   userRoles: user?.roles || [],
+        // });
       }
 
       // Debug logging for rider notifications
       if (recipientRole === 'rider') {
-        console.debug('[NotificationsContext] Rider notification received:', {
-          notificationId: row?.id,
-          recipientRole,
-          recipientUser,
-          isForRider,
-          isForUser,
-          riderId,
-          userRoles: user?.roles || [],
-        });
+        // console.debug('[NotificationsContext] Rider notification received:', {
+        //   notificationId: row?.id,
+        //   recipientRole,
+        //   recipientUser,
+        //   isForRider,
+        //   isForUser,
+        //   riderId,
+        //   userRoles: user?.roles || [],
+        // });
       }
 
       // If recipient_user_id is null but the meta contains this user id (legacy flows), treat as intended for this user
@@ -547,34 +546,34 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           metaUserMatch
         )
       ) {
-        console.debug(
-          '[NotificationsContext] Notification filtered out (not for this user):',
-          {
-            notificationId: row?.id,
-            type: row?.type,
-            recipientUser,
-            recipientRole,
-            isForUser,
-            isForAdmin,
-            isForRider,
-            isForRiderFallback,
-            metaUserMatch,
-            currentUserId: user.id,
-            isAdmin,
-            hasRiderRole: hasRole && hasRole('rider'),
-          }
-        );
+        // console.debug(
+        //   '[NotificationsContext] Notification filtered out (not for this user):',
+        //   {
+        //     notificationId: row?.id,
+        //     type: row?.type,
+        //     recipientUser,
+        //     recipientRole,
+        //     isForUser,
+        //     isForAdmin,
+        //     isForRider,
+        //     isForRiderFallback,
+        //     metaUserMatch,
+        //     currentUserId: user.id,
+        //     isAdmin,
+        //     hasRiderRole: hasRole && hasRole('rider'),
+        //   }
+        // );
         return;
       }
 
-      console.debug('[NotificationsContext] Processing notification:', {
-        notificationId: row?.id,
-        type: row?.type,
-        recipientUser,
-        recipientRole,
-        isForUser,
-        isForAdmin,
-      });
+      // console.debug('[NotificationsContext] Processing notification:', {
+      //   notificationId: row?.id,
+      //   type: row?.type,
+      //   recipientUser,
+      //   recipientRole,
+      //   isForUser,
+      //   isForAdmin,
+      // });
 
       const normalized: Notification = {
         id: row.id,
@@ -704,7 +703,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
           socketRef.current = null;
         }
       } catch (_err) {
-        console.error('Error cleaning up Socket.IO:', _err);
+        // console.error('Error cleaning up Socket.IO:', _err);
       }
 
       try {
@@ -740,7 +739,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         prev.map(p => (p.id === id ? { ...p, read: true } : p))
       );
     } catch (_err) {
-      console.error('markAsRead err', _err);
+      // console.error('markAsRead err', _err);
       // still mark locally for UX
       setNotifications(prev =>
         prev.map(p => (p.id === id ? { ...p, read: true } : p))
@@ -758,7 +757,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
         authorizedAPI.delete('/notifications/clear')
       );
     } catch (_e) {
-      console.warn('notifications clear failed:', _e);
+      // console.warn('notifications clear failed:', _e);
     }
     // Always clear local state for immediate UX
     setNotifications([]);

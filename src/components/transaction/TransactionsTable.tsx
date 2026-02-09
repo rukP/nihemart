@@ -178,7 +178,7 @@ const TransactionsTable: FC<TransactionsTableProps> = () => {
   };
 
   const handleFilterChange = async (filter: string) => {
-    console.log('Status change initiated:', filter);
+    // console.log('Status change initiated:', filter);
     setActiveFilter(filter);
     setCurrentPage(1); // Reset to first page when filtering
     setSearchTerm(''); // Clear search when changing filter
@@ -192,7 +192,7 @@ const TransactionsTable: FC<TransactionsTableProps> = () => {
       // Force a refetch with the new filter
       await refetch();
     } catch (_error) {
-      console.error('Error refetching transactions:', _error);
+      // console.error('Error refetching transactions:', _error);
     }
   };
 
@@ -306,7 +306,7 @@ const TransactionsTable: FC<TransactionsTableProps> = () => {
             className="rounded-lg bg-white"
             onValueChange={value => {
               if (value && statusFilters.includes(value)) {
-                console.log('Filter change triggered:', value);
+                // console.log('Filter change triggered:', value);
                 handleFilterChange(value);
               }
             }}

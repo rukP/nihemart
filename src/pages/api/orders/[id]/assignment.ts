@@ -38,7 +38,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json(result);
   } catch (err: any) {
-    console.error('order assignment handler failed', err);
+    // console.error('order assignment handler failed', err);
     return res.status(500).json({ error: err?.message || 'Failed' });
   }
 }

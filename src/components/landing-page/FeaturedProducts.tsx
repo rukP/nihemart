@@ -186,7 +186,7 @@ const FeaturedProducts: FC<FeaturedProductsProps> = () => {
         );
         setCategories(filteredCats);
       } catch (_error) {
-        console.error('Failed to load featured products data:', _error);
+        // console.error('Failed to load featured products data:', _error);
       } finally {
         setLoading(false);
         setLoadingFilters(false);
@@ -234,7 +234,7 @@ const FeaturedProducts: FC<FeaturedProductsProps> = () => {
         });
         setCategories(Array.from(catMap.values()));
       } catch (_error) {
-        console.error('Failed to filter products:', _error);
+        // console.error('Failed to filter products:', _error);
       } finally {
         setLoading(false);
       }

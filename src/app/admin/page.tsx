@@ -159,7 +159,7 @@ const DashboardContent: React.FC = () => {
         });
         return response.data || [];
       } catch (_error) {
-        console.error('Error fetching products:', _error);
+        // console.error('Error fetching products:', _error);
         return [];
       }
     },
@@ -203,10 +203,10 @@ const DashboardContent: React.FC = () => {
         // Handle both total_count and count fields
         const count =
           response.total_count || response.count || response.users?.length || 0;
-        console.log('Users count response:', { response, count });
+        // console.log('Users count response:', { response, count });
         return count;
       } catch (_error) {
-        console.error('Error fetching users count:', _error);
+        // console.error('Error fetching users count:', _error);
         return 0;
       }
     },
@@ -345,7 +345,7 @@ const DashboardContent: React.FC = () => {
       {} as Record<string, number>
     );
 
-    console.log('Order status counts:', statusCounts);
+    // console.log('Order status counts:', statusCounts);
 
     return [
       { label: 'Pending', value: (statusCounts.pending || 0).toString() },
@@ -464,7 +464,7 @@ const DashboardContent: React.FC = () => {
         const result = await riderAPI.getTopRidersByAmount(5, days);
         return result || [];
       } catch (_error) {
-        console.error('Error fetching top riders:', _error);
+        // console.error('Error fetching top riders:', _error);
         return [];
       }
     },

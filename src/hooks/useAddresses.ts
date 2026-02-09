@@ -129,7 +129,7 @@ export function useAddresses() {
             setSelected(null);
           }
         } catch (_e) {
-          console.warn('Failed to load guest address from localStorage', _e);
+          // console.warn('Failed to load guest address from localStorage', _e);
           setAddresses([]);
           setSelected(null);
         }
@@ -175,7 +175,7 @@ export function useAddresses() {
           throw new Error('Invalid response format');
         }
       } catch (_e) {
-        console.error('Address search failed:', _e);
+        // console.error('Address search failed:', _e);
         setSuggestions([]);
         throw _e;
       }
@@ -207,7 +207,7 @@ export function useAddresses() {
       };
 
       try {
-        console.log('Saving address with data:', addressData);
+        // console.log('Saving address with data:', addressData);
         setLoading(true);
 
         const data = await createAddress({
@@ -231,7 +231,7 @@ export function useAddresses() {
         hasAutoSelectedOnceRef.current = true;
         return data;
       } catch (err) {
-        console.error('saveAddress error:', err);
+        // console.error('saveAddress error:', err);
         setError(err instanceof Error ? err.message : 'Error adding address');
         return null;
       } finally {
@@ -260,7 +260,7 @@ export function useAddresses() {
         setSelected({ ...temp });
         return temp;
       } catch (_e) {
-        console.error('Failed to save guest address to localStorage', _e);
+        // console.error('Failed to save guest address to localStorage', _e);
         setError('Failed to save address');
         return null;
       } finally {
@@ -319,7 +319,7 @@ export function useAddresses() {
         setSelected({ ...merged });
         return merged;
       } catch (_e) {
-        console.error('Failed to update guest address', _e);
+        // console.error('Failed to update guest address', _e);
         setError('Failed to update address');
         return null;
       } finally {
@@ -374,7 +374,7 @@ export function useAddresses() {
         setSelected(null);
         return true;
       } catch (_e) {
-        console.error('Failed to remove guest address', _e);
+        // console.error('Failed to remove guest address', _e);
         setError('Failed to remove address');
         return false;
       } finally {

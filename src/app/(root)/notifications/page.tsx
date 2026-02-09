@@ -55,10 +55,10 @@ const NotificationsPage = () => {
       .filter(n => {
         return n && n.id && (n.title || n.body) && n.created_at;
       });
-    console.debug(
-      '[NotificationsPage] Valid notifications after filtering:',
-      validNotifications.length
-    );
+    // console.debug(
+    //   '[NotificationsPage] Valid notifications after filtering:',
+    //   validNotifications.length
+    // );
     setLocalNotifications(validNotifications);
   }, [notifications]);
 
@@ -93,7 +93,7 @@ const NotificationsPage = () => {
       setLocalNotifications(prev => prev.map(p => ({ ...p, read: true })));
       toast.success('You’re all caught up! All notifications marked as read.');
     } catch (_e) {
-      console.error(_e);
+      // console.error(_e);
       toast.error('Failed to mark notifications as read');
     } finally {
       setIsLoading(false);
@@ -122,7 +122,7 @@ const NotificationsPage = () => {
         prev.map(p => (p.id === notificationId ? { ...p, read: true } : p))
       );
     } catch (_e) {
-      console.error(_e);
+      // console.error(_e);
       // Still update optimistically
       setLocalNotifications(prev =>
         prev.map(p => (p.id === notificationId ? { ...p, read: true } : p))
@@ -299,7 +299,7 @@ const NotificationsPage = () => {
                           setLocalNotifications([]);
                           toast.success('All notifications have been cleared.');
                         } catch (_e) {
-                          console.error(_e);
+                          // console.error(_e);
                           toast.error('Failed to clear notifications');
                         } finally {
                           setIsLoading(false);
@@ -397,10 +397,10 @@ const NotificationsPage = () => {
                                       : undefined,
                                 });
                               } catch (_error) {
-                                console.error(
-                                  'Error formatting notification date:',
-                                  _error
-                                );
+                                // console.error(
+                                //   'Error formatting notification date:',
+                                //   _error
+                                // );
                                 return 'Recently';
                               }
                             })()}

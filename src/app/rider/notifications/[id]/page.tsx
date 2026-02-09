@@ -52,7 +52,7 @@ export default async function NotificationPage({
   );
 
   if (!notifRes.ok) {
-    console.error('Failed to fetch notification', notifRes.status);
+    // console.error('Failed to fetch notification', notifRes.status);
     return notFound();
   }
 

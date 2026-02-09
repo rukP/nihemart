@@ -129,12 +129,12 @@ function PaymentPageContent() {
 
       if (!isBuyNowFlow) {
         clearCart();
-        console.log('[PaymentPage] Cart cleared (cart order)');
+        // console.log('[PaymentPage] Cart cleared (cart order)');
       } else {
-        console.log('[PaymentPage] Cart preserved (Buy Now order)');
+        // console.log('[PaymentPage] Cart preserved (Buy Now order)');
       }
     } catch (_e) {
-      console.error('[PaymentPage] Failed to handle cart:', _e);
+      // console.error('[PaymentPage] Failed to handle cart:', _e);
     }
   };
 
@@ -149,11 +149,11 @@ function PaymentPageContent() {
       });
 
       if (!finResp.ok) {
-        const errorData = await finResp.json().catch(() => ({}));
-        console.error(
-          '[finalizeAndMaybeCreateOrder] Finalize failed:',
-          errorData
-        );
+        const _errorData = await finResp.json().catch(() => ({}));
+        // console.error(
+        //   '[finalizeAndMaybeCreateOrder] Finalize failed:',
+        //   errorData
+        // );
         toast.error('Failed to finalize payment. Please try again.');
         return;
       }
@@ -174,7 +174,7 @@ function PaymentPageContent() {
           // Only clear cart if NOT a Buy Now flow
           clearCartIfNeeded();
         } catch (_e) {
-          console.warn('Failed to clean up storage:', _e);
+          // console.warn('Failed to clean up storage:', _e);
         }
 
         // Redirect based on user authentication status
@@ -272,15 +272,15 @@ function PaymentPageContent() {
                   navigateToThankYou(router);
                 }
               } catch (_err) {
-                console.error(
-                  'Error after creating order on payment page:',
-                  _err
-                );
+                // console.error(
+                //   'Error after creating order on payment page:',
+                //   _err
+                // );
                 router.push('/');
               }
             },
-            onError: (err: any) => {
-              console.error('Auto-create order failed on payment page:', err);
+            onError: (_err: any) => {
+              // console.error('Auto-create order failed on payment page:', err);
               toast.error(
                 'Failed to create order automatically. Please contact support with your payment reference.'
               );
@@ -294,7 +294,7 @@ function PaymentPageContent() {
         }
       }
     } catch (_e) {
-      console.error('finalizeAndMaybeCreateOrder failed:', _e);
+      // console.error('finalizeAndMaybeCreateOrder failed:', _e);
     }
   };
 
@@ -305,19 +305,19 @@ function PaymentPageContent() {
       try {
         const ref = sessionStorage.getItem('kpay_reference');
         if (ref && ref !== 'null' && ref !== 'undefined') {
-          console.log(
-            '[PaymentPage] No paymentId in URL, using reference from sessionStorage:',
-            ref
-          );
+          // console.log(
+          //   '[PaymentPage] No paymentId in URL, using reference from sessionStorage:',
+          //   ref
+          // );
           // Redirect to the correct URL with the reference
           router.replace(`/payment/${ref}`);
           return;
         }
       } catch (_e) {
-        console.error(
-          '[PaymentPage] Failed to get reference from sessionStorage:',
-          _e
-        );
+        // console.error(
+        //   '[PaymentPage] Failed to get reference from sessionStorage:',
+        //   _e
+        // );
       }
       setError('Invalid payment ID. Please return to checkout and try again.');
       setLoading(false);
@@ -342,17 +342,17 @@ function PaymentPageContent() {
         data.status === 'pending' || data.status === 'initiated';
 
       if (isCardPayment && data.checkout_url && isPendingStatus) {
-        console.log(
-          '[PaymentPage] Card payment detected, redirecting to KPay checkout:',
-          data.checkout_url
-        );
+        // console.log(
+        //   '[PaymentPage] Card payment detected, redirecting to KPay checkout:',
+        //   data.checkout_url
+        // );
         // Store the reference so we can return to this page after payment
         try {
           if (data.reference) {
             sessionStorage.setItem('kpay_reference', data.reference);
           }
         } catch (_e) {
-          console.warn('[PaymentPage] Failed to store reference:', _e);
+          // console.warn('[PaymentPage] Failed to store reference:', _e);
         }
         // Redirect to KPay - they will redirect back to redirectUrl (which points to this page)
         window.location.href = data.checkout_url;
@@ -371,9 +371,9 @@ function PaymentPageContent() {
         isKPayReturn &&
         (data.status === 'completed' || data.status === 'successful')
       ) {
-        console.log(
-          '[PaymentPage] Detected return from KPay with completed payment'
-        );
+        // console.log(
+        //   '[PaymentPage] Detected return from KPay with completed payment'
+        // );
         // Immediately check status to ensure we have latest data
         if (data.reference) {
           try {
@@ -404,7 +404,7 @@ function PaymentPageContent() {
                     // Only clear cart if NOT a Buy Now flow
                     clearCartIfNeeded();
                   } catch (_e) {
-                    console.warn('Failed to clean up storage:', _e);
+                    // console.warn('Failed to clean up storage:', _e);
                   }
 
                   // Redirect: authenticated users to order page, guests to thank-you page
@@ -418,10 +418,10 @@ function PaymentPageContent() {
               }
             }
           } catch (_e) {
-            console.error(
-              '[PaymentPage] Failed to check status after KPay return:',
-              _e
-            );
+            // console.error(
+            //   '[PaymentPage] Failed to check status after KPay return:',
+            //   _e
+            // );
           }
         }
       }
@@ -454,7 +454,7 @@ function PaymentPageContent() {
             await finalizeAndMaybeCreateOrder(data.reference);
             return;
           } catch (_e) {
-            console.error('Failed to finalize on initial fetch:', _e);
+            // console.error('Failed to finalize on initial fetch:', _e);
           }
         }
       }
@@ -543,10 +543,10 @@ function PaymentPageContent() {
               // to link payments to newly created orders.
             }
           } catch (_err) {
-            console.warn(
-              'Failed to notify server about payment success:',
-              _err
-            );
+            // console.warn(
+            //   'Failed to notify server about payment success:',
+            //   _err
+            // );
           }
 
           // Stop further polling immediately
@@ -616,7 +616,7 @@ function PaymentPageContent() {
         if (stoppedPolling || timeoutReportedRef.current) {
           return;
         }
-        console.error('Payment status check error:', statusResult.error);
+        // console.error('Payment status check error:', statusResult.error);
         // Increment status check count
         statusCheckCountRef.current++;
         const NOTICETHRESHOLD = 3; // Define the threshold
@@ -633,7 +633,7 @@ function PaymentPageContent() {
       if (stoppedPolling || timeoutReportedRef.current) {
         return;
       }
-      console.error('Failed to check payment status:', _err);
+      // console.error('Failed to check payment status:', _err);
       toast.error(
         'Having trouble checking payment status. Please refresh the page or try a different payment method.',
         { duration: 5000 }
@@ -655,10 +655,10 @@ function PaymentPageContent() {
     if ((kpayRef || kpayTid) && !paymentId) {
       const ref = kpayRef || sessionStorage.getItem('kpay_reference');
       if (ref && ref !== 'null' && ref !== 'undefined') {
-        console.log(
-          '[PaymentPage] Detected KPay return, using reference:',
-          ref
-        );
+        // console.log(
+        //   '[PaymentPage] Detected KPay return, using reference:',
+        //   ref
+        // );
         router.replace(`/payment/${ref}`);
         return;
       }
@@ -769,7 +769,7 @@ function PaymentPageContent() {
               { duration: 6000 }
             );
           } catch (_e) {
-            console.error('Failed to record timeout:', _e);
+            // console.error('Failed to record timeout:', _e);
           }
         })();
       }

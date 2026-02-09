@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (_error) {
-    console.error('Error in update-status route:', _error);
+    // console.error('Error in update-status route:', _error);
     return NextResponse.json(
       { error: 'Internal server _error' },
       { status: 500 }

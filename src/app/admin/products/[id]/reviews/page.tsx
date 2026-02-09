@@ -25,14 +25,14 @@ export default function ProductReviewsPage({
         setError(null);
         const productData = await fetchProductWithReviews(id);
 
-        console.log(
-          '[ProductReviewsPage] Fetched product reviews data:',
-          productData
-        );
+        // console.log(
+        //   '[ProductReviewsPage] Fetched product reviews data:',
+        //   productData
+        // );
 
         // FIXED: Check for product data structure - backend returns { product, reviews }
         if (!productData) {
-          console.error('[ProductReviewsPage] No product data returned');
+          // console.error('[ProductReviewsPage] No product data returned');
           setError('Product not found');
           setLoading(false);
           return;
@@ -43,7 +43,7 @@ export default function ProductReviewsPage({
         const reviews = productData.reviews || [];
 
         if (!product || !product.id) {
-          console.error('[ProductReviewsPage] Invalid product data:', product);
+          // console.error('[ProductReviewsPage] Invalid product data:', product);
           setError('Invalid product data');
           setLoading(false);
           return;
@@ -55,10 +55,10 @@ export default function ProductReviewsPage({
           reviews: reviews,
         };
 
-        console.log('[ProductReviewsPage] Formatted data:', formattedData);
+        // console.log('[ProductReviewsPage] Formatted data:', formattedData);
         setData(formattedData);
       } catch (error: any) {
-        console.error('Error fetching product reviews:', error);
+        // console.error('Error fetching product reviews:', error);
         const errorMessage =
           error?.message || error?.error || 'Failed to load product reviews';
         setError(errorMessage);

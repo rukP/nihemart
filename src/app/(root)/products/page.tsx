@@ -120,7 +120,7 @@ function ProductListingComponent() {
       );
       setTotalCount(count);
     } catch (_error) {
-      console.error('Failed to fetch products', _error);
+      // console.error('Failed to fetch products', _error);
     } finally {
       setLoading(false);
     }
@@ -144,7 +144,7 @@ function ProductListingComponent() {
         setCategories(categories);
         setSubcategories(subcategories);
       } catch (_error) {
-        console.error('Failed to load category data', _error);
+        // console.error('Failed to load category data', _error);
       }
     };
     loadFilterData();
@@ -166,7 +166,7 @@ function ProductListingComponent() {
           );
         }
       } catch (_error) {
-        console.warn('Failed to check orders enabled status', _error);
+        // console.warn('Failed to check orders enabled status', _error);
         // If check fails, prefer schedule-managed default (null)
         setAdminEnabled(null);
       }
@@ -221,7 +221,7 @@ function ProductListingComponent() {
     toast.success(t('cart.added') || 'Added to cart');
   };
 
-  console.log({ products });
+  // console.log({ products });
 
   const handleBuyNow = (e: React.MouseEvent, product: StoreProduct) => {
     e.stopPropagation();

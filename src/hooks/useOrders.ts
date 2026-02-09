@@ -797,7 +797,7 @@ export function useCancelOrder() {
           } catch (_e) {}
         }
       }
-      console.error('Failed to cancel order:', error);
+      // console.error('Failed to cancel order:', error);
       toast.error(
         error instanceof Error ? error.message : 'Failed to cancel order'
       );
@@ -920,7 +920,7 @@ export function useUpdateOrderStatus() {
           } catch (_e) {}
         }
       }
-      console.error('Failed to update order status:', error);
+      // console.error('Failed to update order status:', error);
     },
     onSettled: data => {
       try {
@@ -952,11 +952,11 @@ export function useRejectOrderItem() {
       reason: string;
       isDelivered: boolean;
     }) => {
-      console.log('[useRejectOrderItem] Calling endpoint:', {
-        orderItemId,
-        isDelivered,
-        endpoint: isDelivered ? '/refund' : '/reject',
-      });
+      // console.log('[useRejectOrderItem] Calling endpoint:', {
+      //   orderItemId,
+      //   isDelivered,
+      //   endpoint: isDelivered ? '/refund' : '/reject',
+      // });
 
       // Call the appropriate endpoint based on delivery status
       if (isDelivered) {
@@ -1021,7 +1021,7 @@ export function useRejectOrderItem() {
             }
           }
         } catch (_e) {
-          console.error('Error during optimistic update:', _e);
+          // console.error('Error during optimistic update:', _e);
         }
       }
 
@@ -1063,7 +1063,7 @@ export function useRejectOrderItem() {
             queryClient.setQueryData(key, updatedList);
           }
         } catch (_e) {
-          console.error('Error during optimistic list update:', _e);
+          // console.error('Error during optimistic list update:', _e);
         }
       }
 
@@ -1100,10 +1100,10 @@ export function useRejectOrderItem() {
     },
     onSuccess: (data: any, _variables) => {
       // Update cache with actual server response
-      console.log(
-        '[useRejectOrderItem] Success - updating cache with server data:',
-        data
-      );
+      // console.log(
+      //   '[useRejectOrderItem] Success - updating cache with server data:',
+      //   data
+      // );
 
       // Update order details cache
       const details = queryClient.getQueriesData({
@@ -1123,14 +1123,14 @@ export function useRejectOrderItem() {
                 ...data, // Merge server response
               };
               queryClient.setQueryData(key, updated);
-              console.log('[useRejectOrderItem] Updated order detail cache');
+              // console.log('[useRejectOrderItem] Updated order detail cache');
             }
           }
         } catch (_e) {
-          console.error(
-            '[useRejectOrderItem] Error updating detail cache:',
-            _e
-          );
+          // console.error(
+          //   '[useRejectOrderItem] Error updating detail cache:',
+          //   _e
+          // );
         }
       }
 
@@ -1418,7 +1418,7 @@ export function useOrders() {
           }
         },
         onError: err => {
-          console.error('Failed to respond to refund:', err);
+          // console.error('Failed to respond to refund:', err);
           toast.error(err?.message || 'Failed to process refund response');
         },
       }),
@@ -1505,7 +1505,7 @@ export function useOrders() {
           toast.success('Order refund response processed');
         },
         onError: err => {
-          console.error('Failed to respond to order refund:', err);
+          // console.error('Failed to respond to order refund:', err);
           toast.error(
             err?.message || 'Failed to process order refund response'
           );

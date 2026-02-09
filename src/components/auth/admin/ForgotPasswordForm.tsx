@@ -43,7 +43,7 @@ const ForgotPasswordForm: FC = () => {
       toast.success(response.message || t('auth.resetEmailSent'));
       form.reset();
     } catch (error: any) {
-      console.error('Forgot password error:', error);
+      // console.error('Forgot password error:', error);
       toast.error(
         error?.message ||
           error?.error ||

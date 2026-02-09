@@ -127,7 +127,7 @@ export async function fetchAllReviews(
       count: result.count || 0,
     };
   } catch (_error) {
-    console.error('Error fetching reviews:', _error);
+    // console.error('Error fetching reviews:', _error);
     return { data: [], count: 0 };
   }
 }
@@ -196,7 +196,7 @@ export async function getReviewStats(): Promise<{
       recentReviewsCount,
     };
   } catch (_error) {
-    console.error('Error fetching review stats:', _error);
+    // console.error('Error fetching review stats:', _error);
     return {
       totalReviews: 0,
       averageRating: 0,

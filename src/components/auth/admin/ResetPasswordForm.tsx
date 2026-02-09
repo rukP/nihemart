@@ -76,7 +76,7 @@ const ResetPasswordForm: FC = () => {
       toast.success(response.message || t('auth.password.updated'));
       router.push('/signin');
     } catch (error: any) {
-      console.error('Reset password error:', error);
+      // console.error('Reset password error:', error);
       toast.error(
         error?.message ||
           error?.error ||

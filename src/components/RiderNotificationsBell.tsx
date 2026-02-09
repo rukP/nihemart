@@ -58,7 +58,7 @@ const RiderNotificationsBell: React.FC = () => {
       // they can see the full context for the notification.
       router.push(`/rider/notifications`);
     } catch (_e) {
-      console.error('Error handling notification click:', _e);
+      // console.error('Error handling notification click:', _e);
       router.push(`/rider/notifications`);
     }
   };
@@ -103,7 +103,7 @@ const RiderNotificationsBell: React.FC = () => {
         });
       }
     } catch (_error) {
-      console.error('Error formatting time:', _error);
+      // console.error('Error formatting time:', _error);
       return 'Recently';
     }
   };

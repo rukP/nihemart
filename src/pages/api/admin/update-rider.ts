@@ -14,7 +14,7 @@ export default async function handler(
     const rider = await updateRider(riderId, updates || {});
     return res.status(200).json({ rider });
   } catch (err: any) {
-    console.error('update-rider failed', err);
+    // console.error('update-rider failed', err);
     return res.status(500).json({ error: err?.message || String(err) });
   }
 }

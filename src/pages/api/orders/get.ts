@@ -31,7 +31,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json({ order: result });
   } catch (err: any) {
-    console.error('/api/orders/get error:', err);
+    // console.error('/api/orders/get error:', err);
     return res.status(500).json({ error: err?.message || String(err) });
   }
 }

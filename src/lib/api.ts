@@ -175,7 +175,7 @@ const refreshTokenIfNeeded = async () => {
         user: response.user,
       });
     } catch (_error) {
-      console.error('Failed to refresh token:', _error);
+      // console.error('Failed to refresh token:', _error);
       useAuthStore.getState().clearAuth();
     } finally {
       isRefreshingInInterceptor = false;

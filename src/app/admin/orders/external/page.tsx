@@ -343,7 +343,7 @@ function ExternalOrdersContent() {
                           setShowManageRefund(true);
                         }
                       } catch (_err) {
-                        console.error('Manage refund failed:', _err);
+                        // console.error('Manage refund failed:', _err);
                       }
                     }}
                   >
@@ -381,7 +381,7 @@ function ExternalOrdersContent() {
                         setSelectedOrderDetail(fetched as Order);
                       }
                     } catch (_e) {
-                      console.error('Failed to fetch order details:', _e);
+                      // console.error('Failed to fetch order details:', _e);
                     }
                   }}
                 >

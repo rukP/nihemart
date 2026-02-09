@@ -76,7 +76,7 @@ export function AddressDialog({
       try {
         await searchAddresses(searchQuery);
       } catch (err: any) {
-        console.error('Search failed:', err);
+        // console.error('Search failed:', err);
         setError(
           err.message || 'Failed to search addresses. Please try again.'
         );
@@ -112,7 +112,7 @@ export function AddressDialog({
 
   const handleSave = async (values: AddressFormValues) => {
     if (!selected) {
-      console.log('No address selected');
+      // console.log('No address selected');
       return;
     }
 

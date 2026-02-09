@@ -65,7 +65,7 @@ export default function OrderRefundsTable() {
       setOrders(response.data || []);
       setCount(response.count || 0);
     } catch (err: any) {
-      console.error('Failed to fetch order refunds:', err);
+      // console.error('Failed to fetch order refunds:', err);
       toast.error(
         err?.response?.data?.message ||
           err.message ||

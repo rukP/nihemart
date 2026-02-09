@@ -71,7 +71,7 @@ export default async function handler(
 
     res.status(200).json(result);
   } catch (err: any) {
-    console.error('refunds API error', err);
+    // console.error('refunds API error', err);
     res.status(500).json({ error: err?.message || 'Server error' });
   }
 }

@@ -40,7 +40,7 @@ export default async function handler(
     const result = await response.json();
     return res.status(200).json(result);
   } catch (err: any) {
-    console.error('/api/orders/create error:', err);
+    // console.error('/api/orders/create error:', err);
     const message = err?.message || 'Failed to create order';
     return res.status(500).json({ error: message });
   }

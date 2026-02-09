@@ -103,7 +103,7 @@ export default function AddEditSubcategoryDialog({
       }
       onSuccess();
     } catch (_error) {
-      console.error('Failed to save subcategory:', _error);
+      // console.error('Failed to save subcategory:', _error);
       toast.error('Failed to save subcategory. Please try again.');
     }
   };

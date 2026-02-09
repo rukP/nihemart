@@ -7,11 +7,11 @@ const handleApiRequest = async (apiCall: () => Promise<any>): Promise<any> => {
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error) && error.response) {
-      console.error('Error response:', error.response);
+      // console.error('Error response:', error.response);
       // throw the response data so callers can handle it consistently
       throw error.response.data;
     } else {
-      console.error('Unexpected error:', error);
+      // console.error('Unexpected error:', error);
       throw error;
     }
   }

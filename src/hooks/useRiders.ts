@@ -394,8 +394,8 @@ export function useCreateRider() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: riderKeys.lists() });
     },
-    onError: (error: any) => {
-      console.error('Rider creation mutation error:', error);
+    onError: (_error: any) => {
+      // console.error('Rider creation mutation error:', error);
       // Error is handled by the component
     },
   });

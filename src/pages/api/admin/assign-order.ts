@@ -16,7 +16,7 @@ export default async function handler(
     const assignment = await assignOrderToRider(riderId, orderId);
     return res.status(200).json({ assignment });
   } catch (err: any) {
-    console.error('assign-order failed', err);
+    // console.error('assign-order failed', err);
     if (err && err.code === 'ORDERNOT_FOUND')
       return res
         .status(404)

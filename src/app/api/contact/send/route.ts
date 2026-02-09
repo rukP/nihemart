@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
       // include reply-to so admins can reply directly to the submitter
       const res = await sendEmail(to, subjectLine, html, { replyTo: email });
       if (!res || (res as any).ok === false) {
-        console.warn('Contact sendEmail failed:', res);
+        // console.warn('Contact sendEmail failed:', res);
         return new Response(
           JSON.stringify({
             ok: false,
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
         }
       );
     } catch (sendErr: any) {
-      console.error('/api/contact/send sendEmail error:', sendErr);
+      // console.error('/api/contact/send sendEmail error:', sendErr);
       return new Response(
         JSON.stringify({ ok: false, error: String(sendErr) }),
         {
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (err: any) {
-    console.error('/api/contact/send error:', err);
+    // console.error('/api/contact/send error:', err);
     return new Response(
       JSON.stringify({ ok: false, error: err?.message || String(err) }),
       {

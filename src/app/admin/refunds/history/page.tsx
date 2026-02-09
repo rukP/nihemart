@@ -56,7 +56,7 @@ function RefundsHistoryContent() {
       setItems(itemsJson.data || []);
       setOrders(ordersJson.data || []);
     } catch (err: any) {
-      console.error('Failed to fetch refund history:', err);
+      // console.error('Failed to fetch refund history:', err);
       toast.error(err?.message || 'Failed to load refund history');
     } finally {
       setLoading(false);
@@ -258,7 +258,7 @@ function RefundsHistoryContent() {
 
                     toast.success('Export ready — CSV files downloaded');
                   } catch (err: any) {
-                    console.error('Export failed', err);
+                    // console.error('Export failed', err);
                     toast.error(err?.message || 'Export failed');
                   } finally {
                     setExporting(false);

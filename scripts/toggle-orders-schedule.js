@@ -27,9 +27,9 @@ const SERVICE_KEY = process.env.SERVICE_API_KEY || process.env.ADMIN_API_KEY;
 const AUTH_KEY = ADMIN_PASSWORD || SERVICE_KEY;
 
 if (!AUTH_KEY) {
-  console.error(
-    'Missing ADMIN_PASSWORD (or ADMIN_ACCOUNT_PASSWORD) or SERVICE_API_KEY environment variable'
-  );
+  // console.error(
+  //   'Missing ADMIN_PASSWORD (or ADMIN_ACCOUNT_PASSWORD) or SERVICE_API_KEY environment variable'
+  // );
   process.exit(1);
 }
 
@@ -53,19 +53,19 @@ async function main() {
     const scheduleDisabled = minuteOfDay >= offStart || minuteOfDay < offEnd;
     const desiredEnabled = !scheduleDisabled;
 
-    console.log(
-      'Kigali local time:',
-      kigaliDate.toISOString(),
-      '(hour',
-      kHour,
-      ')'
-    );
-    console.log(
-      'Schedule disabled?',
-      scheduleDisabled,
-      '=> desiredEnabled=',
-      desiredEnabled
-    );
+    // console.log(
+    //   'Kigali local time:',
+    //   kigaliDate.toISOString(),
+    //   '(hour',
+    //   kHour,
+    //   ')'
+    // );
+    // console.log(
+    //   'Schedule disabled?',
+    //   scheduleDisabled,
+    //   '=> desiredEnabled=',
+    //   desiredEnabled
+    // );
 
     // Update via backend API scheduler endpoint
     // This endpoint respects admin overrides and only updates if source is 'schedule'
@@ -98,10 +98,10 @@ async function main() {
       const error = await updateResponse
         .json()
         .catch(() => ({ error: 'Unknown error' }));
-      console.error(
-        'Failed to update orders_enabled:',
-        error.error || updateResponse.statusText
-      );
+      // console.error(
+      //   'Failed to update orders_enabled:',
+      //   error.error || updateResponse.statusText
+      // );
       process.exitCode = 2;
       return;
     }
@@ -110,19 +110,19 @@ async function main() {
 
     // Check if update was skipped due to admin override
     if (result.source === 'admin') {
-      console.log(
-        'Admin override present; scheduler did not change orders_enabled.'
-      );
+      // console.log(
+      //   'Admin override present; scheduler did not change orders_enabled.'
+      // );
       return;
     }
 
-    console.log(
-      'Successfully updated orders_enabled:',
-      result.enabled,
-      '(source=' + result.source + ')'
-    );
+    // console.log(
+    //   'Successfully updated orders_enabled:',
+    //   result.enabled,
+    //   '(source=' + result.source + ')'
+    // );
   } catch (err) {
-    console.error('Unexpected error:', err && err.message ? err.message : err);
+    // console.error('Unexpected error:', err && err.message ? err.message : err);
     process.exitCode = 3;
   }
 }

@@ -38,7 +38,7 @@ export function useUsers() {
     ) => {
       setLoading(true);
       setError(null);
-      console.log('[fetchUsers] Called with:', { p, l, appliedFilters });
+      // console.log('[fetchUsers] Called with:', { p, l, appliedFilters });
 
       try {
         const response = await userAPI.getAllUsers({
@@ -46,7 +46,7 @@ export function useUsers() {
           page: p,
           limit: l,
         });
-        console.log('[fetchUsers] Got response:', response);
+        // console.log('[fetchUsers] Got response:', response);
 
         // Backend returns { users: [...], count: X, total_count: Y, role_counts: {...} }
         const usersArray = response.users || [];
@@ -95,20 +95,20 @@ export function useUsers() {
   // simpler: components that need users will mount the hook and get data.
   useEffect(() => {
     // Fetch current page when hook mounts or page/limit/filters change
-    console.log(
-      '[useUsers] useEffect triggered. Current filters:',
-      filters,
-      'Page:',
-      page,
-      'Limit:',
-      limit
-    );
+    // console.log(
+    //   '[useUsers] useEffect triggered. Current filters:',
+    //   filters,
+    //   'Page:',
+    //   page,
+    //   'Limit:',
+    //   limit
+    // );
     fetchUsers(page, limit, filters);
   }, [page, limit, filters, fetchUsers]);
 
   // Update sort filter
   const setSortBy = useCallback((sortBy: SortBy) => {
-    console.log('[useUsers] setSortBy called with:', sortBy);
+    // console.log('[useUsers] setSortBy called with:', sortBy);
     setFilters(prev => ({ ...prev, sortBy }));
     setPage(1); // Reset to first page when filter changes
   }, []);

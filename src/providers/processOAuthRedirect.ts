@@ -16,14 +16,14 @@ export async function processOAuthRedirect(
     const code = url.searchParams.get('code');
     const hasAccessToken = url.hash && url.hash.includes('access_token=');
 
-    console.log('🔍 OAuth callback check:', {
-      hasCode: !!code,
-      hasAccessToken,
-      fullUrl: window.location.href,
-    });
+    // console.log('🔍 OAuth callback check:', {
+    //   hasCode: !!code,
+    //   hasAccessToken,
+    //   fullUrl: window.location.href,
+    // });
 
     if (!code && !hasAccessToken) {
-      console.log('❌ No OAuth code or access token found');
+      // console.log('❌ No OAuth code or access token found');
       return { sessionHandled: false };
     }
 
@@ -35,16 +35,16 @@ export async function processOAuthRedirect(
         const stored = localStorage.getItem('oauth_redirect');
         if (stored) {
           redirectParam = stored;
-          console.log(
-            '📦 Retrieved redirect from localStorage:',
-            redirectParam
-          );
+          // console.log(
+          //   '📦 Retrieved redirect from localStorage:',
+          //   redirectParam
+          // );
         }
       } catch (_e) {
-        console.warn('⚠️ Could not read from localStorage:', _e);
+        // console.warn('⚠️ Could not read from localStorage:', _e);
       }
     } else {
-      console.log('🔗 Found redirect in URL params:', redirectParam);
+      // console.log('🔗 Found redirect in URL params:', redirectParam);
     }
 
     let session: any = null;
@@ -82,9 +82,9 @@ export async function processOAuthRedirect(
 
     // PRIORITY 1: Handle PKCE code-based flow (modern approach)
     if (code) {
-      console.log(
-        '🔐 Attempting PKCE code exchange / SDK session retrieval...'
-      );
+      // console.log(
+      //   '🔐 Attempting PKCE code exchange / SDK session retrieval...'
+      // );
 
       try {
         // Many SDKs implement a helper that parses the URL and exchanges the code.
@@ -99,12 +99,12 @@ export async function processOAuthRedirect(
             if (res?.data?.session) {
               session = res.data.session;
               user = session.user;
-              console.log(
-                '✅ Session established via getSessionFromUrl (code handled by SDK)'
-              );
+              // console.log(
+              //   '✅ Session established via getSessionFromUrl (code handled by SDK)'
+              // );
             }
           } catch (_e) {
-            console.warn('⚠️ getSessionFromUrl threw while handling code:', _e);
+            // console.warn('⚠️ getSessionFromUrl threw while handling code:', _e);
           }
         }
 
@@ -119,14 +119,14 @@ export async function processOAuthRedirect(
               supabaseClient.auth as any
             ).exchangeCodeForSession(code);
             if (error) {
-              console.error('❌ exchangeCodeForSession error:', error);
+              // console.error('❌ exchangeCodeForSession error:', error);
             } else if (data?.session) {
               session = data.session;
               user = session.user;
-              console.log('✅ Session established via exchangeCodeForSession');
+              // console.log('✅ Session established via exchangeCodeForSession');
             }
           } catch (_e) {
-            console.warn('⚠️ exchangeCodeForSession threw:', _e);
+            // console.warn('⚠️ exchangeCodeForSession threw:', _e);
           }
         }
 
@@ -136,19 +136,19 @@ export async function processOAuthRedirect(
           if (s?.user) {
             session = s;
             user = s.user;
-            console.log(
-              '✅ Session captured from onAuthStateChange after code exchange'
-            );
+            // console.log(
+            //   '✅ Session captured from onAuthStateChange after code exchange'
+            // );
           }
         }
       } catch (_err: any) {
-        console.error('❌ PKCE handling failed:', _err);
+        // console.error('❌ PKCE handling failed:', _err);
       }
     }
 
     // PRIORITY 2: Handle implicit/hash-based flow (legacy)
     if (!session && hasAccessToken) {
-      console.log('🔐 Attempting hash-based session retrieval...');
+      // console.log('🔐 Attempting hash-based session retrieval...');
 
       try {
         const result: any =
@@ -163,30 +163,30 @@ export async function processOAuthRedirect(
 
         const { data, error } = result || {};
         if (error) {
-          console.warn('⚠️ getSessionFromUrl error:', error);
+          // console.warn('⚠️ getSessionFromUrl error:', error);
         } else if (data?.session) {
           session = data.session;
           user = session.user;
-          console.log('✅ Session retrieved via hash-based flow');
+          // console.log('✅ Session retrieved via hash-based flow');
         } else {
           // Try waiting for auth state change if SDK handled the hash asynchronously
           const s = await waitForAuthStateChange(3000);
           if (s?.user) {
             session = s;
             user = s.user;
-            console.log(
-              '✅ Session captured from onAuthStateChange after hash flow'
-            );
+            // console.log(
+            //   '✅ Session captured from onAuthStateChange after hash flow'
+            // );
           }
         }
       } catch (_err) {
-        console.warn('⚠️ Hash-based retrieval threw:', _err);
+        // console.warn('⚠️ Hash-based retrieval threw:', _err);
       }
     }
 
     // PRIORITY 3: Final fallback - check if session already exists
     if (!session) {
-      console.log('🔍 Checking for existing session...');
+      // console.log('🔍 Checking for existing session...');
 
       try {
         // Try immediate getSession
@@ -194,29 +194,29 @@ export async function processOAuthRedirect(
         if (data?.session) {
           session = data.session;
           user = session.user;
-          console.log('✅ Found existing session');
+          // console.log('✅ Found existing session');
         } else {
           // Give the SDK a short window to emit an auth state change
           const s = await waitForAuthStateChange(2000);
           if (s?.user) {
             session = s;
             user = s.user;
-            console.log(
-              '✅ Session captured from onAuthStateChange after getSession check'
-            );
+            // console.log(
+            //   '✅ Session captured from onAuthStateChange after getSession check'
+            // );
           }
         }
       } catch (_err) {
-        console.warn('⚠️ getSession check failed:', _err);
+        // console.warn('⚠️ getSession check failed:', _err);
       }
     }
 
     if (!session || !user) {
-      console.error('❌ No session could be established after all attempts');
+      // console.error('❌ No session could be established after all attempts');
       return { sessionHandled: false };
     }
 
-    console.log('✅ Session established successfully, updating store...');
+    // console.log('✅ Session established successfully, updating store...');
 
     // Update auth store
     setSession(session);
@@ -224,17 +224,17 @@ export async function processOAuthRedirect(
 
     // Fetch user roles
     try {
-      console.log('👥 Fetching user roles...');
+      // console.log('👥 Fetching user roles...');
       await fetchRoles(user.id);
-      console.log('✅ Roles fetched successfully');
+      // console.log('✅ Roles fetched successfully');
     } catch (_err) {
-      console.warn('⚠️ Failed to fetch roles:', _err);
+      // console.warn('⚠️ Failed to fetch roles:', _err);
       setRoles(new Set());
     }
 
     // Upsert profile
     try {
-      console.log('👤 Upserting user profile...');
+      // console.log('👤 Upserting user profile...');
       const um: any = user.user_metadata || {};
       await fetch('/api/auth/upsert-profile', {
         method: 'POST',
@@ -245,9 +245,9 @@ export async function processOAuthRedirect(
           phone: um.phone || null,
         }),
       });
-      console.log('✅ Profile upserted successfully');
+      // console.log('✅ Profile upserted successfully');
     } catch (_e) {
-      console.warn('⚠️ Profile upsert error:', _e);
+      // console.warn('⚠️ Profile upsert error:', _e);
     }
 
     // Clean up URL and localStorage
@@ -264,19 +264,19 @@ export async function processOAuthRedirect(
       // Clean up localStorage
       try {
         localStorage.removeItem('oauth_redirect');
-        console.log('🧹 Cleaned up localStorage redirect');
+        // console.log('🧹 Cleaned up localStorage redirect');
       } catch (_e) {
-        console.warn('⚠️ Could not clear localStorage:', _e);
+        // console.warn('⚠️ Could not clear localStorage:', _e);
       }
 
-      console.log('✅ OAuth process complete! Redirect param:', redirectParam);
+      // console.log('✅ OAuth process complete! Redirect param:', redirectParam);
       return { sessionHandled: true, redirectParam: redirectParam };
     } catch (_e) {
-      console.warn('⚠️ URL cleanup error:', _e);
+      // console.warn('⚠️ URL cleanup error:', _e);
       return { sessionHandled: true, redirectParam: redirectParam };
     }
   } catch (_err) {
-    console.error('❌ OAuth redirect handling failed:', _err);
+    // console.error('❌ OAuth redirect handling failed:', _err);
   }
 
   return { sessionHandled: false };

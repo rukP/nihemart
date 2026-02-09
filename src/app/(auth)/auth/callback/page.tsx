@@ -61,7 +61,7 @@ export default function AuthCallback() {
             localStorage.removeItem('oauth_redirect');
           }
         } catch (_e) {
-          console.warn('Could not read from localStorage:', _e);
+          // console.warn('Could not read from localStorage:', _e);
         }
 
         // If no stored redirect, check URL
@@ -83,7 +83,7 @@ export default function AuthCallback() {
         setShowRefresh(false);
         router.replace(redirectUrl);
       } catch (error: any) {
-        console.error('OAuth callback error:', error);
+        // console.error('OAuth callback error:', error);
 
         // Provide more specific error messages
         let errorMessage = 'Sign-in callback failed. Please try again.';

@@ -496,7 +496,7 @@ const Orders = () => {
                                   status: 'cancelled',
                                 });
                               } catch (_err) {
-                                console.error(_err);
+                                // console.error(_err);
                               } finally {
                                 // clear local cancelling flag after mutation settled
                                 setCancellingMap(s => {
@@ -546,7 +546,7 @@ const Orders = () => {
                                       order.id
                                     );
                                   } catch (_err) {
-                                    console.error(_err);
+                                    // console.error(_err);
                                   }
                                 }}
                                 className="border-yellow-300 text-yellow-600 hover:bg-yellow-50 text-xs sm:text-sm h-8 sm:h-9"
@@ -666,7 +666,7 @@ const Orders = () => {
                         setRefundTargetOrder(null);
                         setRefundReasonInput('');
                       } catch (_err) {
-                        console.error(_err);
+                        // console.error(_err);
                       }
                     }}
                     className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"

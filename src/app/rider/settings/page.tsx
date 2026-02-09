@@ -325,7 +325,7 @@ export default function RiderSettingsPage() {
                                 : 'You are now unavailable'
                             );
                           } catch (err: any) {
-                            console.error(err);
+                            // console.error(err);
                             toast.error(
                               err?.message || 'Failed to update availability'
                             );

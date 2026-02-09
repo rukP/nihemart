@@ -71,7 +71,7 @@ export default function EditRiderMediaDialog({
       }
       onSaved();
     } catch (e: any) {
-      console.error(e);
+      // console.error(e);
       toast.error(e?.message || String(e));
     } finally {
       setIsSaving(false);
